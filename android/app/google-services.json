@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "172533081841",
+    "project_id": "golocal-1e6d6",
+    "storage_bucket": "golocal-1e6d6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172533081841:android:5e8c68025c852a2045eb50",
+        "android_client_info": {
+          "package_name": "com.example.worldwildprova"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBU2M9smtEKIqnKr_iSNr5egHdNUmaATXw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
