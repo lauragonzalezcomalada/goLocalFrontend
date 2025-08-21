@@ -4,7 +4,7 @@ import 'package:worldwildprova/screens/onboarding_screen.dart';
 import 'package:worldwildprova/screens/log_in_screen.dart';
 import 'package:worldwildprova/screens/placecarousel_screen.dart';
 import 'package:worldwildprova/screens/second_screen.dart';
-import 'package:worldwildprova/widgets/activitycard.dart';
+import 'package:worldwildprova/widgets/eventcard.dart';
 
 class MainScaffold extends StatefulWidget {
   final int initialIndex;

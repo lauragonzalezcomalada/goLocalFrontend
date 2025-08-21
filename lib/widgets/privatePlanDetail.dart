@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' hide Size;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/models_fromddbb/activity.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -11,7 +12,6 @@ import 'package:worldwildprova/models_fromddbb/asistentes.dart';
 import 'package:worldwildprova/models_fromddbb/item.dart';
 import 'package:worldwildprova/models_fromddbb/privatePlan.dart';
 import 'package:worldwildprova/models_fromddbb/tagChip.dart';
-import 'package:worldwildprova/screens/profile_screen.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'package:worldwildprova/widgets/dateBox.dart';
 import 'package:worldwildprova/widgets/itemAmountCounter.dart';
@@ -31,16 +31,21 @@ class PrivatePlanDetail extends StatefulWidget {
 }
 
 class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
+  PrivatePlan? privatePlan;
   late String privatePlanUuid;
   late String date;
   late String time;
   late String userToken;
+  List<double?> originalAmountValues = [];
   List<double?> assignedAmountValues = [];
+  List<bool> itemChecked = []; // una checkbox por item
   //late List<Asistente> asistentes;
   // late bool _asistenciaController;
 
   bool _showAsistentes = false;
   bool _showNewItemForm = false;
+
+  bool _snackShown = false;
 
   final TextEditingController _itemNameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
@@ -49,33 +54,55 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
   void initState() {
     super.initState();
     privatePlanUuid = widget.privatePlanUuid;
-    fetchPrivatePlan();
+    fetchPrivatePlan().then((_) {
+      print('PrivatePlanDetail: privatePlanUuid: $privatePlanUuid');
+      if (privatePlan!.userIsGoing == false) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showJoinPlanDialog();
+        });
+      }
+    });
     setState(() {
       userToken = widget.userToken;
     });
   }
-
-  PrivatePlan? privatePlan;
 
   //Función para hacer la solicitud GET
   Future<void> fetchPrivatePlan() async {
     try {
       final response = await http.get(
           Uri.parse(
-              'http://192.168.0.17:8000/api/private_plans/?privatePlanUuid=$privatePlanUuid'),
+              '${Config.serverIp}/private_plans/?privatePlanUuid=$privatePlanUuid'),
           headers: {'Authorization': 'Bearer ${widget.userToken}'});
-      print(response.statusCode);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
 
         setState(() {
           privatePlan = PrivatePlan.fromJson(data);
+          assignedAmountValues = [];
+          itemChecked = [];
           for (var item in privatePlan!.items!) {
+            originalAmountValues.add(item.assignedAmount);
             assignedAmountValues.add(item.assignedAmount);
+            itemChecked.add(false);
           }
         });
-        print('assined balues liest');
-        print(assignedAmountValues);
+
+        if (privatePlan!.userIsGoing == false) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('¿Querés unirte a este plan?'),
+                action: SnackBarAction(
+                  label: 'Unirme',
+                  onPressed: () {
+                    _joinPlan();
+                  },
+                ),
+              ),
+            );
+          });
+        }
       } else if (response.statusCode == 401) {
         // unauthorized
         final authService = Provider.of<AuthService>(context, listen: false);
@@ -97,9 +124,90 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
     }
   }
 
-  void _submitBringingItem(Item item, double? amount, int index) async {
-    print(amount);
+  void _joinPlan() async {
+    print(Uri.parse('${Config.serverIp}/accept_invitation/'));
+    final response =
+        await http.post(Uri.parse('${Config.serverIp}/accept_invitation/'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ${widget.userToken}'
+            },
+            body: jsonEncode({"private_plan_uuid": privatePlanUuid}));
 
+    if (response.statusCode == 200) {
+      // Si la invitación es aceptada, actualiza el estado
+      setState(() {
+        privatePlan!.userIsGoing = true;
+      });
+    } else {
+      // Manejo de errores
+      print('Error al unirse al plan: ${response.body}');
+    }
+  }
+
+  void _showJoinPlanDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('¿Quieres unirte a este plan?'),
+          /* content: const Text(
+              'Si te unes, podrás ver los detalles y colaborar con los demás asistentes.'),*/
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Por ahora no'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _joinPlan();
+                Navigator.of(context).pop();
+              },
+              child: const Text('Dale'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDialogBringingItem(Item item, double? amount, int index) {
+    if (amount == originalAmountValues[index]) {
+      // si no es modifica res, no apareix popup
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+              'Te encargas de llevar ${amount! - originalAmountValues[index]!} de  ${item.name}'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  assignedAmountValues[index] = originalAmountValues[index];
+                });
+              },
+              child: const Text('Mejor no'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _submitBringingItem(item, amount);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Re, sí'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _submitBringingItem(Item item, double? amount) async {
     if (amount == item.assignedAmount) {
       setState(() {
         isChecked = false;
@@ -109,32 +217,64 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
 
     final response = await http.post(
         Uri.parse(
-          'http://192.168.0.17:8000/api/update_item/',
+          '${Config.serverIp}/update_item/',
         ),
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.userToken}'
         },
         body: jsonEncode({
           "uuid": item.uuid,
           "plan_uuid": privatePlan!.uuid,
           "newAssignedAmountValue": amount
         }));
-    print(response.statusCode);
-    print(response.body);
+
     if (response.statusCode == 200) {
       setState(() {
-        assignedAmountValues[index] = double.parse(response.body);
+        assignedAmountValues = [];
+        itemChecked = [];
+        privatePlan = PrivatePlan.fromJson(json.decode(response.body));
+        for (var item in privatePlan!.items!) {
+          assignedAmountValues.add(item.assignedAmount);
+          itemChecked.add(false);
+        }
       });
     }
   }
 
-  void _addNewItemToPlan() {
+  void _addNewItemToPlan() async {
     String itemName = _itemNameController.text;
     double itemAmount = double.parse(_amountController.text);
 
     print(itemName);
     print(itemAmount);
 
+    final response = await http.post(
+      Uri.parse('${Config.serverIp}/add_item/'),
+      headers: {
+        'Content-Type': 'application/json', // Tipo de contenido JSON
+        'Authorization': 'Bearer ${widget.userToken}'
+      },
+      body: jsonEncode({
+        "name": itemName,
+        "neededAmount": itemAmount,
+        "plan_uuid": privatePlan!.uuid
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      var newItem = Item.fromJson(json.decode(response.body));
+      setState(() {
+        privatePlan!.items!.add(newItem);
+        assignedAmountValues.add(newItem.assignedAmount);
+        itemChecked.add(false);
+        _itemNameController.clear();
+        _amountController.clear();
+        _showNewItemForm = false;
+      });
+    } else {
+      throw Exception('Failed to add item');
+    }
   }
 
   bool isChecked = false;
@@ -215,7 +355,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                                 width: 200,
                                 child: Center(
                                     child: SelectableText(
-                                        privatePlan!.invitationCode,
+                                        privatePlan!.invitationCode!,
                                         style: const TextStyle(fontSize: 35))),
                               )),
                           Positioned(
@@ -297,87 +437,100 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                     ),
                     const SizedBox(height: 10),
                     if (privatePlan!.items != null)
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxHeight: 500, // hasta 200, pero no fija
+                      Padding(
+                        padding:
+                            const EdgeInsets.fromLTRB(8.0, 10.0, 8.0, 10.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Que traes?',
+                              style: TextStyle(
+                                  fontSize: 25, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
-                        child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: privatePlan!.items!.length,
-                            itemBuilder: (context, index) {
-                              Item item = privatePlan!.items![index];
+                      ),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 500, // hasta 200, pero no fija
+                      ),
+                      child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: privatePlan!.items!.length,
+                          itemBuilder: (context, index) {
+                            Item item = privatePlan!.items![index];
 
-                              bool accomplished =
-                                  item.assignedAmount == item.neededAmount;
+                            bool accomplished =
+                                item.assignedAmount == item.neededAmount;
 
-                              return Column(
-                                children: [
-                                  Container(
-                                    height: 70,
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      color: accomplished
-                                          ? Colors.grey
-                                          : Colors.transparent,
-                                      border: Border.all(
-                                        color: Colors.blue, // Color del borde
-                                        width: 2.0, // Grosor del borde
-                                      ),
-                                      borderRadius: BorderRadius.circular(
-                                          12), // Bordes redondeados
+                            return Column(
+                              children: [
+                                Container(
+                                  height: 70,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: accomplished
+                                        ? Colors.grey
+                                        : Colors.transparent,
+                                    border: Border.all(
+                                      color: Colors.blue, // Color del borde
+                                      width: 2.0, // Grosor del borde
                                     ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                          16.0, 8.0, 16.0, 8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            item.name,
-                                            style:
-                                                const TextStyle(fontSize: 18),
-                                          ),
-                                          const Spacer(),
-                                          ItemAmountCounter(
-                                              neededAmount: item.neededAmount,
-                                              assignedAmount:
-                                                  item.assignedAmount,
-                                              onChanged: (newValue) {
+                                    borderRadius: BorderRadius.circular(
+                                        12), // Bordes redondeados
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        16.0, 8.0, 16.0, 8.0),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          item.name,
+                                          style: const TextStyle(fontSize: 25),
+                                        ),
+                                        const Spacer(),
+                                        ItemAmountCounter(
+                                            neededAmount: item.neededAmount,
+                                            assignedAmount: item.assignedAmount,
+                                            onChanged: (newValue) {
+                                              setState(() {
+                                                assignedAmountValues[index] =
+                                                    newValue;
+                                              });
+                                            }),
+                                        if (!accomplished)
+                                          Checkbox(
+                                              value: itemChecked[index],
+                                              onChanged: (bool? selected) {
                                                 setState(() {
-                                                  assignedAmountValues[index] =
-                                                      newValue;
+                                                  itemChecked[index] =
+                                                      selected!;
                                                 });
-                                              }),
-                                          if (!accomplished)
-                                            Checkbox(
-                                                value: accomplished
-                                                    ? accomplished
-                                                    : isChecked,
-                                                onChanged: (bool? selected) {
-                                                  setState(() {
-                                                    isChecked = !isChecked;
-                                                  });
-                                                  if (selected! == true) {
-                                                    print(
-                                                        'valores distintos y seleccionado');
-
-                                                    _submitBringingItem(
+                                                if (selected! == true) {
+                                                  _showDialogBringingItem(
+                                                      item,
+                                                      assignedAmountValues[
+                                                          index],
+                                                      index);
+                                                  /* _submitBringingItem(
                                                         item,
                                                         assignedAmountValues[
                                                             index],
-                                                        index);
-                                                  }
-                                                }),
-                                        ],
-                                      ),
+                                                        index);*/
+                                                }
+                                              }),
+                                      ],
                                     ),
                                   ),
-                                  const SizedBox(height: 5),
-                                ],
-                              );
-                            }),
-                      ),
+                                ),
+                                const SizedBox(height: 5),
+                              ],
+                            );
+                          }),
+                    ),
                     const SizedBox(height: 10),
                     if (_showNewItemForm == false)
                       GestureDetector(
@@ -450,7 +603,18 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                               children: [
                                 ElevatedButton(
                                     onPressed: () {
-                                      _addNewItemToPlan();
+                                      print(_itemNameController.text.isEmpty);
+                                      if (_itemNameController.text.isNotEmpty &&
+                                          _amountController.text.isNotEmpty) {
+                                        // Validar que los campos no estén vacíos
+                                        _addNewItemToPlan();
+                                      } else {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(const SnackBar(
+                                          content: Text(
+                                              'Por favor, completa todos los campos.'),
+                                        ));
+                                      }
                                     },
                                     child: Text('añadir'),
                                     style: ElevatedButton.styleFrom(
@@ -492,5 +656,3 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
     );
   }
 }
-
-class PortalEntry {}

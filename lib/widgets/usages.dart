@@ -75,7 +75,7 @@ void showLoginAlert(context, body_text) {
         TextButton(
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
-            Navigator.push(
+            Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
                     builder: (context) => const MainScaffold(initialIndex: 0)));
@@ -108,7 +108,7 @@ Widget headerForDate(DateTime date) {
 
 Widget sectionHeader(String label) {
   return Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    padding: const EdgeInsets.symmetric(vertical: 1.0),
     child: Row(
       children: <Widget>[
         const Expanded(

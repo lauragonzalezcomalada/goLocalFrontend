@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:worldwildprova/aux/iconsMap.dart';
+import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/models_fromddbb/tag.dart';
 import 'package:worldwildprova/models_fromddbb/tagChip.dart';
 
@@ -22,14 +23,12 @@ class _TagSelectorState extends State<TagSelector> {
   List<int> selectedTagsIds = [];
 
   Future<void> fetchTags() async {
-    final response =
-        await http.get(Uri.parse('http://192.168.0.17:8000/api/tags/'));
+    final response = await http.get(Uri.parse('${Config.serverIp}/tags/'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
       setState(() {
-        existingTags =
-            data.map((tagJson) => Tag.fromJson(tagJson)).toList();
+        existingTags = data.map((tagJson) => Tag.fromJson(tagJson)).toList();
       });
     }
   }

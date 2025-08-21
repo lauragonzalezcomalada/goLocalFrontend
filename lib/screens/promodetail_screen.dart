@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/models_fromddbb/activity.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -44,14 +45,14 @@ class _PromoDetailState extends State<PromoDetail> {
   //Función para hacer la solicitud GET
   Future<void> fetchPromo() async {
     try {
-      final response = await http.get(Uri.parse(
-          'http://192.168.0.17:8000/api/promos/?promo_uuid=$promoUuid'));
+      final response = await http
+          .get(Uri.parse('${Config.serverIp}/promos/?promo_uuid=$promoUuid'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           promo = Promo.fromServerJson(data);
-          date = DateFormat('dd/MM/yyyy').format(promo!.startDateTime);
-          startTime = DateFormat('HH:mm').format(promo!.startDateTime);
+          date = DateFormat('dd/MM/yyyy').format(promo!.dateTime);
+          startTime = DateFormat('HH:mm').format(promo!.dateTime);
           endTime = DateFormat('HH:mm').format(promo!.endDateTime);
           asistentes = promo!.asistentes;
         });
@@ -75,7 +76,7 @@ class _PromoDetailState extends State<PromoDetail> {
     final userToken = await authService.getAccessToken();
     final response = await http.post(
         Uri.parse(
-          'http://192.168.0.17:8000/api/actualizar_asistencia/',
+          '${Config.serverIp}/actualizar_asistencia/',
         ),
         headers: {
           'Content-Type': 'application/json',
@@ -95,8 +96,8 @@ class _PromoDetailState extends State<PromoDetail> {
     if (promo == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    String formattedStartDate = DateFormat('EEEE, d \'de\' MMMM', 'es_ES')
-        .format(promo!.startDateTime);
+    String formattedStartDate =
+        DateFormat('EEEE, d \'de\' MMMM', 'es_ES').format(promo!.dateTime);
     return Scaffold(
       appBar: AppBar(),
       body: SingleChildScrollView(
@@ -120,7 +121,7 @@ class _PromoDetailState extends State<PromoDetail> {
                         16), // Solo bordes superiores redondeados
                     topRight: Radius.circular(16),
                   ),
-                  child: promo!.activityImageUrl == null
+                  child: promo!.imageUrl == null
                       ? ClipRRect(
                           child: Container(
                             height: 200,
@@ -130,7 +131,7 @@ class _PromoDetailState extends State<PromoDetail> {
                       : Stack(children: [
                           Image.network(
                             promo!
-                                .activityImageUrl!, // o usa NetworkImage con Image.network()
+                                .imageUrl!, // o usa NetworkImage con Image.network()
                             fit: BoxFit.cover,
                           ),
                           Positioned(
@@ -175,14 +176,20 @@ class _PromoDetailState extends State<PromoDetail> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
-                    
                     children: [
-                      Text(formattedStartDate, style: TextStyle(fontSize: 20),),
-                      Text(' de $startTime a $endTime',style: TextStyle(fontSize: 20),),
+                      Text(
+                        formattedStartDate,
+                        style: TextStyle(fontSize: 20),
+                      ),
+                      Text(
+                        ' de $startTime a $endTime',
+                        style: TextStyle(fontSize: 20),
+                      ),
                       Spacer(),
                       const Text('🤸🏻', style: TextStyle(fontSize: 20)),
-                      Text(asistentes.toString(),style: TextStyle(fontSize: 20)),
-                     /* ElevatedButton(
+                      Text(asistentes.toString(),
+                          style: TextStyle(fontSize: 20)),
+                      /* ElevatedButton(
                           onPressed: () {
                             _asistenciaController == true
                                 ? _registrarAsistencia(-1)
@@ -206,7 +213,7 @@ class _PromoDetailState extends State<PromoDetail> {
                 MapaDesdeBackend(
                   lat: promo!.lat!,
                   long: promo!.long!,
-                  imageUrl: promo!.activityImageUrl!,
+                  imageUrl: promo!.imageUrl!,
                 )
               ],
             ),

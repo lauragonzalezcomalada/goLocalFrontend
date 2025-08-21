@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:mime/mime.dart';
+import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/screens/profile_screen.dart';
 import 'package:worldwildprova/screens/log_in_screen.dart';
 
@@ -90,8 +91,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
       return;
     } else {
-      var updateUserUri =
-          Uri.parse('http://192.168.0.17:8000/api/actualizar_usuario/');
+      var updateUserUri = Uri.parse('${Config.serverIp}/actualizar_usuario/');
 
       var request = http.MultipartRequest('POST', updateUserUri);
       request.fields['user_uuid'] = widget.userUuid;

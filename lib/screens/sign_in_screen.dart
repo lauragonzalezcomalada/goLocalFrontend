@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:worldwildprova/config.dart';
 import 'dart:convert';
 
 import 'package:worldwildprova/screens/onboarding_screen.dart';
@@ -18,12 +19,9 @@ class _SignInScreenState extends State<SignInScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // Cambia esto por la URL real de tu backend
-  final String backendUrl = 'http://192.168.0.17:8000/api';
-
   Future<void> registerManually() async {
     final response = await http.post(
-      Uri.parse('$backendUrl/signIn/'),
+      Uri.parse('${Config.serverIp}/signIn/'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'name': nameController.text,
@@ -60,7 +58,7 @@ class _SignInScreenState extends State<SignInScreen> {
 
       if (idToken != null) {
         final response = await http.post(
-          Uri.parse('$backendUrl/auth/google/'),
+          Uri.parse('${Config.serverIp}/auth/google/'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'idToken': idToken}),
         );

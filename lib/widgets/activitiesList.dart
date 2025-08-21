@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/models_fromddbb/activity.dart';
 import 'package:worldwildprova/models_fromddbb/tag.dart';
 import 'package:http/http.dart' as http;
 import 'package:worldwildprova/screens/activitydetail_screen.dart';
-import 'package:worldwildprova/widgets/activityCardForListing.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'package:worldwildprova/widgets/aux_ActivityCard.dart';
 import 'dart:convert';
@@ -102,11 +102,12 @@ class _ActivitiesListState extends State<ActivitiesList> {
   // Función para hacer la solicitud GET
   Future<void> fetchActivities() async {
     try {
-      final response = await http.get(Uri.parse(
-          'http://192.168.0.17:8000/api/activities/?place_uuid=$placeUuid'));
+      final response = await http.get(
+          Uri.parse('${Config.serverIp}/activities/?place_uuid=$placeUuid'));
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
+        print(data);
         setState(() {
           activities = data
               .map((activityJson) => Activity.fromJson(activityJson, false))
@@ -125,8 +126,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
 
   Future<void> fetchTags() async {
     try {
-      final response =
-          await http.get(Uri.parse('http://192.168.0.17:8000/api/tags/'));
+      final response = await http.get(Uri.parse('${Config.serverIp}/tags/'));
 
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
@@ -145,12 +145,15 @@ class _ActivitiesListState extends State<ActivitiesList> {
     final authService = Provider.of<AuthService>(context, listen: false);
     final isLoggedIn = await authService.isLoggedIn();
 
-    if (!isLoggedIn) {
+    print('is logged in');
+    print(isLoggedIn);
+    if (isLoggedIn == false) {
       Future.microtask(() => showLoginAlert(context,
           'Regístrate para poder tener más información de los planes!'));
       return;
     }
     userToken = await authService.getAccessToken();
+
     Navigator.push(
         context,
         MaterialPageRoute(
@@ -194,6 +197,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
+                    labelStyle: TextStyle(fontSize: 20),
                     labelText: 'Buscar',
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
@@ -229,9 +233,9 @@ class _ActivitiesListState extends State<ActivitiesList> {
                               0, 0), // para evitar tamaño mínimo fijo
                         ),
                         child: const Text('GRATIS',
-                            style: TextStyle(fontSize: 12))),
+                            style: TextStyle(fontSize: 15))),
                     const SizedBox(width: 8),
-                    if(tags.isNotEmpty)
+                    if (tags.isNotEmpty)
                       Expanded(
                         child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -256,7 +260,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
                                 ),
                                 child: Text(
                                   tag.name,
-                                  style: const TextStyle(fontSize: 12),
+                                  style: const TextStyle(fontSize: 15),
                                 ),
                               );
                             }).toList(),
@@ -285,7 +289,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
                         ),
                         child: const Text(
                           'TAGS',
-                          style: TextStyle(fontSize: 12),
+                          style: TextStyle(fontSize: 15),
                         )),
                   ],
                 ),

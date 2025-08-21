@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:worldwildprova/models_fromddbb/activity.dart';
+import 'package:worldwildprova/models_fromddbb/promo.dart';
 import 'package:worldwildprova/widgets/dateBox.dart';
 
-class AuxActivityCard extends StatelessWidget {
-  final Activity activity;
-  const AuxActivityCard({super.key, required this.activity});
+class PromoCard extends StatelessWidget {
+  final Promo promo;
+  const PromoCard({super.key, required this.promo});
 
   @override
   Widget build(BuildContext context) {
@@ -22,42 +23,19 @@ class AuxActivityCard extends StatelessWidget {
                 ),
                 child: Container(
                   width: double.infinity,
-                  child: activity.imageUrl == null
+                  child: promo.imageUrl == null
                       ? Container(
                           color: Colors.blue, // Color fijo
                           width: 200,
                           height: 150,
                         )
                       : Image.network(
-                          activity
+                          promo
                               .imageUrl!, // o usa NetworkImage con Image.network()
                           fit: BoxFit.cover,
                         ),
                 ),
               ),
-              if (activity.gratis!)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.7),
-                      border: Border.all(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withOpacity(0.8), // Color del borde
-                        width: 2.0, // Grosor del borde
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'GRATIS',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                  ),
-                ),
             ]),
           ),
           Expanded(
@@ -76,22 +54,22 @@ class AuxActivityCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    DateBox(date: activity.dateTime),
+                    DateBox(date: promo.dateTime),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8.0, 0, 0, 0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(activity.name, style: TextStyle(fontSize: 25)),
-                          if (activity.shortDesc != null)
-                            Text(activity.shortDesc!,
+                          Text(promo.name, style: TextStyle(fontSize: 25)),
+                          if (promo.shortDesc != null)
+                            Text(promo.shortDesc!,
                                 style: TextStyle(fontSize: 20)),
                           Spacer(),
-                          if (activity.tags!.isNotEmpty)
+                          if (promo.tags!.isNotEmpty)
                             Wrap(
                               spacing: 4,
                               runSpacing: 2,
-                              children: (activity.tags ?? []).map((tag) {
+                              children: (promo.tags ?? []).map((tag) {
                                 return Container(
                                   padding: EdgeInsets.symmetric(
                                       horizontal: 6, vertical: 2),

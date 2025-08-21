@@ -10,7 +10,10 @@ import 'package:worldwildprova/widgets/mainscaffold.dart';
 
 class LogInScreen extends StatefulWidget {
   bool comingFromOnboarding;
-   LogInScreen({required this.comingFromOnboarding,super.key});
+
+  final String? redirectTo;
+
+  LogInScreen({required this.comingFromOnboarding, this.redirectTo, super.key});
 
   @override
   State<LogInScreen> createState() => _LogInScreenState();
@@ -33,6 +36,15 @@ class _LogInScreenState extends State<LogInScreen> {
       setState(() {
         _errorMessage = '';
       });
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfileScreen(
+            notFromMainScaffold: true,
+          ),
+        ),
+      );
     } else {
       setState(() {
         _errorMessage = 'Datos incorrectos';
@@ -40,22 +52,12 @@ class _LogInScreenState extends State<LogInScreen> {
     }
   }
 
-  void _signin() {
-    Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => SignInScreen(),
-        ));
-
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context); // Escucha cambios
 
     return Scaffold(
-        body: FutureBuilder(
+      body: FutureBuilder(
           future: authService.isLoggedIn(),
           builder: ((context, snapshot) {
             if (!snapshot.hasData) {
@@ -97,29 +99,41 @@ class _LogInScreenState extends State<LogInScreen> {
                         ),
                         SizedBox(height: 20),
                         ElevatedButton(
-                            onPressed: _signin,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SignInScreen(),
+                                ),
+                              );
+                            },
                             child: Text('No tienes cuenta? Create una nueva!'))
                       ],
                     ));
           })),
-        
-         bottomNavigationBar:widget.comingFromOnboarding == true ? BottomNavigationBar(
-          currentIndex: 0, // mismo control
-          onTap: (index) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => MainScaffold(initialIndex: index)),
-            );
-          },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.place), label: 'Lugares'),
-            BottomNavigationBarItem(icon: Icon(Icons.brush), label: 'Crear plan'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
-          ],
-        ):null,
-      
-       
+      bottomNavigationBar: widget.comingFromOnboarding == true
+          ? BottomNavigationBar(
+              currentIndex: 0, // mismo control
+              onTap: (index) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MainScaffold(
+                      initialIndex: index,
+                    ),
+                  ),
+                );
+              },
+              items: const [
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.place), label: 'Lugares'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.brush), label: 'Crear plan'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Perfil'),
+              ],
+            )
+          : null,
     );
   }
 }

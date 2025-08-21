@@ -21,16 +21,17 @@ class TagChip extends StatelessWidget {
       label: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          /*Icon(
             tag.icon ?? Icons.help_outline,
-            size: 12,
+            size: 20,
             color: Theme.of(context).colorScheme.primary,
-          ),
+          ),*/
+          Text(tag.icon),
           const SizedBox(width: 4),
           Text(
             tag.name,
             style: TextStyle(
-                fontSize: 12, color: Theme.of(context).colorScheme.primary),
+                fontSize: 20, color: Theme.of(context).colorScheme.primary),
           ),
         ],
       ),

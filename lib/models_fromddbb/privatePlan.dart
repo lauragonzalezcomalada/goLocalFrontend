@@ -1,46 +1,60 @@
+import 'package:worldwildprova/config.dart';
+import 'package:worldwildprova/models_fromddbb/evento.dart';
 import 'package:worldwildprova/models_fromddbb/item.dart';
 import 'package:worldwildprova/models_fromddbb/userprofile.dart';
 import 'package:worldwildprova/widgets/listableitem.dart';
 
-class PrivatePlan extends ListableItem {
+class PrivatePlan extends ListableItem implements Evento {
+  @override
   final String uuid;
+  @override
   final String name;
+  @override
+  final String? imageUrl;
+  @override
+  final DateTime dateTime;
+  @override
+  // ignore: non_constant_identifier_names
+  final bool? created_by_user;
+  @override
+  final bool? tiene_tickets;
+
   final String? shortDesc;
   final String? desc;
   final String? placeName;
   final double? lat;
   final double? long;
-  final String? imageUrl;
-  final bool? created_by_user;
+
   final bool? going;
   final bool? conReserva;
   final bool? gratis;
   final double? price;
-  final String invitationCode;
+  final String? invitationCode;
   final List<UserProfile>? invitados;
-  final DateTime dateTime;
   final List<Item>? items;
+  bool? userIsGoing;
 
-  PrivatePlan(
-      {required this.uuid,
-      required this.name,
-      this.shortDesc,
-      this.desc,
-      this.placeName,
-      this.lat,
-      this.long,
-      this.imageUrl,
-      this.created_by_user,
-      this.going,
-      this.conReserva,
-      this.gratis,
-      this.price,
-      required this.dateTime,
-      required this.invitationCode,
-      this.invitados,
-      this.items
-      /* this.invitados*/
-      });
+  PrivatePlan({
+    required this.uuid,
+    required this.name,
+    this.shortDesc,
+    this.desc,
+    this.placeName,
+    this.lat,
+    this.long,
+    this.imageUrl,
+    this.created_by_user,
+    this.going,
+    this.conReserva,
+    this.gratis,
+    this.price,
+    required this.dateTime,
+    this.invitationCode,
+    this.invitados,
+    this.items,
+    this.userIsGoing,
+    this.tiene_tickets,
+  });
 
   factory PrivatePlan.fromJson(Map<String, dynamic> json) {
     var a = PrivatePlan(
@@ -53,14 +67,14 @@ class PrivatePlan extends ListableItem {
       going: json['user_isgoing'],
       gratis: json['gratis'],
       price: json['price'],
-      imageUrl: 'http://192.168.0.17:8000' +
-          json[
-              "image"] /*== null
+      // imageUrl: Config.serverIp +
+      //   json["image"]
+      /*== null
           ? null
           : fromUserProfile == false
-              ? 'http://192.168.0.17:8000' + json["image"]
+              ? Config.serverIp + json["image"]
               : json["image"]*/
-      ,
+      //,
       dateTime: DateTime.parse(json['startDateandtime']),
       invitationCode: json['invitation_code'],
       invitados: (json['invited_users'] != null)
@@ -68,9 +82,14 @@ class PrivatePlan extends ListableItem {
               .map((invitadoJson) => UserProfile.fromServerJson(invitadoJson))
               .toList()
           : <UserProfile>[],
-      items: (json['items'] as List).map((itemJson) => Item.fromJson(itemJson)).toList()
+      items: json['items'] != null
+          ? (json['items'] as List)
+              .map((itemJson) => Item.fromJson(itemJson))
+              .toList()
+          : [],
+      userIsGoing: json['user_is_invited'],
+      tiene_tickets: json['tiene_ticket'],
     );
-    print(a);
     return a;
   }
 }

@@ -3,25 +3,28 @@ import 'package:intl/intl.dart';
 import 'package:worldwildprova/screens/activitydetail_screen.dart';
 import 'package:worldwildprova/widgets/usages.dart';
 
-class ActivityCard extends StatelessWidget {
+class EventCard extends StatelessWidget {
   final String activityUuid;
   final String? imageUrl;
   final String activityTitle;
   final DateTime activityDateTime;
   final bool created_by_user;
   final String? userToken;
+  final bool? tiene_tickets;
 
-  ActivityCard(
+  EventCard(
       {super.key,
       required this.activityUuid,
       this.imageUrl,
       required this.activityTitle,
       required this.activityDateTime,
       required this.created_by_user,
-      this.userToken});
+      this.userToken,
+      this.tiene_tickets});
 
   @override
   Widget build(BuildContext context) {
+    print('tienetickets: $tiene_tickets');
     return GestureDetector(
       onTap: () {
         print('tapèd');
@@ -35,8 +38,8 @@ class ActivityCard extends StatelessWidget {
                     )));
       },
       child: SizedBox(
-        height: 200,
-        width: 130,
+        height: 300,
+        width: 400,
         child: Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15), // Bordes redondeados
@@ -58,7 +61,7 @@ class ActivityCard extends StatelessWidget {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      height: 200, // altura del degradat
+                      height: 300, // altura del degradat
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -77,7 +80,7 @@ class ActivityCard extends StatelessWidget {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      height: 150, // altura del degradat
+                      height: 200, // altura del degradat
                       child: Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -140,6 +143,12 @@ class ActivityCard extends StatelessWidget {
                             ),
                           ],
                         )),
+                  if (tiene_tickets != null && tiene_tickets == true)
+                    Positioned(
+                        top: 8,
+                        right: 50,
+                        child: Icon(Icons.confirmation_num,
+                            size: 30, color: Colors.amber)),
                 ],
               ),
             )),

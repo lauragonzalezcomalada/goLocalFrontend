@@ -3,14 +3,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:worldwildprova/config.dart';
 import 'dart:convert';
 
 import 'package:worldwildprova/models_fromddbb/userprofile.dart'; // Necesario para convertir JSON a objetos
 
 class AuthService with ChangeNotifier {
   //URL per a tenir el token d'autentificació
-  static const String _apiUrl = 'http://192.168.0.17:8000/api/';
-  // Instancia de FlutterSecureStorage para guardar el token de forma segura
+  static const String _apiUrl = 'http://192.168.1.38:8000/api/';
+  // Instancia de FlutterSecureStorage per guardar el token de forma segura
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   String? _accessToken;
@@ -24,7 +25,7 @@ class AuthService with ChangeNotifier {
   // Método para hacer login y obtener los tokens
   Future<bool> login(String username, String password) async {
     final response = await http.post(
-      Uri.parse(_apiUrl + 'token/'),
+      Uri.parse('${Config.serverIp}/token/'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'username': username, 'password': password}),
     );
@@ -94,7 +95,7 @@ class AuthService with ChangeNotifier {
     return token != null;
   }
 
-  // Método para hacer logout (borrar los tokens)
+  //(borrar los tokens)
   Future<void> logout() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
@@ -112,22 +113,17 @@ class AuthService with ChangeNotifier {
     final refreshToken = await getRefreshToken();
     if (refreshToken == null) return;
 
-    print('apiurl');
-    print(_apiUrl);
-    print(refreshToken);
-
-    final response = await http.post(Uri.parse(_apiUrl + 'token/refresh/'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'refresh': refreshToken,
-        }));
+    final response =
+        await http.post(Uri.parse('${Config.serverIp}/token/refresh/'),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'refresh': refreshToken,
+            }));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       _saveNewAccessToken(data['access']);
-      // Procesar el nuevo access token
-      //_saveTokens(String accessToken, String refreshToken)
     } else {
       print('Error al refrescar el token: ${response.statusCode}');
     }
@@ -137,7 +133,8 @@ class AuthService with ChangeNotifier {
     final accessToken = await getAccessToken();
     if (token == null) return null;
 
-    final response = await http.get(Uri.parse(_apiUrl + 'user/profile/'),
+    final response = await http.get(
+        Uri.parse('${Config.serverIp}/user/profile/'),
         headers: {'Authorization': 'Bearer $accessToken'});
 
     if (response.statusCode == 200) {

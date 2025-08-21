@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:worldwildprova/models_fromddbb/activity.dart';
+import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/models_fromddbb/privatePlan.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'package:worldwildprova/widgets/mainscaffold.dart';
@@ -46,7 +46,7 @@ class _PrivatePlansListState extends State<PrivatePlansList> {
   Future<void> _loadUserPrivatePlans() async {
     try {
       final response = await http.get(
-          Uri.parse('http://192.168.0.17:8000/api/private_plans/'),
+          Uri.parse('${Config.serverIp}/private_plans/'),
           headers: {'Authorization': 'Bearer $userToken'});
 
       if (response.statusCode == 200) {

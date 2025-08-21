@@ -1,3 +1,5 @@
+import 'package:worldwildprova/config.dart';
+
 class Place {
   final String uuid;
   final int id;
@@ -8,8 +10,7 @@ class Place {
   final String? imageUrl;
 
   Place(
-      {
-      required this.uuid,  
+      {required this.uuid,
       required this.id,
       required this.name,
       required this.description,
@@ -26,7 +27,7 @@ class Place {
       description: json['desc'],
       latitud: json['latitude'] != null ? json['latitude'].toDouble() : 0.0,
       longitud: json['longitude'] != null ? json['longitude'].toDouble() : 0.0,
-      imageUrl: 'http://192.168.0.17:8000' + json['image'],
+      imageUrl: Config.serverIp + json['image'],
     );
   }
 }

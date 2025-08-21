@@ -34,8 +34,7 @@ class SecondScreen extends StatefulWidget {
 
 class _SecondScreenState extends State<SecondScreen>
     with SingleTickerProviderStateMixin {
-
-        late TabController _tabController;
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -53,25 +52,26 @@ class _SecondScreenState extends State<SecondScreen>
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('Que hacer en ${widget.placeName}'),
+          title: Text('Que hacer en ${widget.placeName}',
+              style: TextStyle(fontSize: 35)),
           bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'Planes'),
-            Tab(text: 'Promos'),
-            Tab(text: 'Planes privados')
-          ],
+            labelStyle: const TextStyle(
+              fontSize: 15, // 👈 Tamaño del texto seleccionado
+            ),
+            controller: _tabController,
+            tabs: [
+              Tab(text: 'Planes'),
+              Tab(text: 'Promos'),
+              Tab(text: 'Planes privados')
+            ],
+          ),
         ),
-        ),
-        body: TabBarView(
-        controller: _tabController,
-
-          children:[ ActivitiesList(
+        body: TabBarView(controller: _tabController, children: [
+          ActivitiesList(
               placeUuid: widget.placeUuid, placeName: widget.placeName),
-              PromoList(placeUuid: widget.placeUuid, placeName: widget.placeName),
-              const PrivatePlansList()
-              ]
-        ),
+          PromoList(placeUuid: widget.placeUuid, placeName: widget.placeName),
+          const PrivatePlansList()
+        ]),
         bottomNavigationBar: widget.fromMainScaffold == false
             ? BottomNavigationBar(
                 currentIndex: 0, // mismo control

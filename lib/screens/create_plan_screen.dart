@@ -4,6 +4,7 @@ import 'package:mime/mime.dart';
 import 'package:path/path.dart' as path;
 import 'package:http_parser/http_parser.dart';
 import 'package:intl/intl.dart'; // per les dates, per formatejarles
+import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/models_fromddbb/userprofile.dart';
 import 'package:worldwildprova/widgets/usages.dart';
 import 'package:flutter/material.dart';
@@ -88,6 +89,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   String? _selectedPlaceId;
   double? _latitude;
   double? _longitude;
+  String? direccion;
 
   // Variable para controlar la opción seleccionada y el error
   bool? _selectedGratisOption;
@@ -160,9 +162,14 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   //Obtener sugerencias desde Places Autocomplete
   Future<void> _getPlaceSuggestions(String input) async {
+    print('get place suggestions');
+    print(input);
     final url =
         'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$googleApiKey';
+    print(url);
     final response = await http.get(Uri.parse(url));
+    print(response.statusCode);
+    print(response.body);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
@@ -188,6 +195,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       final location = data['result']['geometry']['location'];
       _latitude = location['lat'];
       _longitude = location['lng'];
+      direccion = data['result']['formatted_address'];
     } else {
       print("Details error: ${response.body}");
     }
@@ -267,8 +275,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   void _submitForm() async {
     if (_validate()) {
-      var createActivityUri =
-          Uri.parse('http://192.168.0.17:8000/api/createevent/');
+      var createActivityUri = Uri.parse('${Config.serverIp}/createevent/');
 
       var request = http.MultipartRequest('POST', createActivityUri);
       final token = await userToken;
@@ -291,24 +298,20 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       }
       request.fields['lat'] = _latitude!.toString();
       request.fields['long'] = _longitude!.toString();
-
+      request.fields['direccion'] = direccion!;
       request.fields['startDateandtime'] = _selectedDateTime!.toIso8601String();
       //request.fields['endDateandtime'] =
       //    _selectedEndDateTime!.toIso8601String();
 
       switch (_selectedPlanType!) {
         case PlanType.plan:
-          request.fields['isPlan'] = true.toString();
-          request.fields['isPromo'] = false.toString();
-          request.fields['isPrivatePlan'] = false.toString();
+          request.fields['tipoEvento'] = '0';
+
         case PlanType.promo:
-          request.fields['isPlan'] = false.toString();
-          request.fields['isPromo'] = true.toString();
-          request.fields['isPrivatePlan'] = false.toString();
+          request.fields['tipoEvento'] = '1';
+
         case PlanType.private:
-          request.fields['isPlan'] = false.toString();
-          request.fields['isPromo'] = false.toString();
-          request.fields['isPrivatePlan'] = true.toString();
+          request.fields['tipoEvento'] = '2';
       }
 
       //request.fields['isPlanSelected'] = _selectedPlan.toString();
@@ -366,8 +369,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
     setState(() => _isLoading = true);
 
-    final response = await http.get(
-        Uri.parse('http://192.168.0.17:8000/api/search_users/?query=$query'));
+    final response = await http
+        .get(Uri.parse('${Config.serverIp}/search_users/?query=$query'));
 
     print(response.statusCode);
     if (response.statusCode == 200) {
@@ -564,9 +567,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                             padding: EdgeInsets.only(top: 4),
                             child: Text(
                               'Selecciona una opción',
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 12),
+                              style: TextStyle(color: Colors.red, fontSize: 12),
                             ),
                           ),
                         if (_selectedGratisOption == false) ...[
@@ -631,7 +632,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         ),*/
                         TextFormField(
                           controller: _placeController,
-                          decoration: InputDecoration(labelText: 'Lugar'),
+                          decoration: InputDecoration(
+                            labelText: 'Lugar',
+                            border: const OutlineInputBorder(),
+                          ),
                           onChanged: (value) {
                             _getPlaceSuggestions(value);
                           },
@@ -746,15 +750,13 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 Text(
                                   'Selecciona una fecha de fin',
                                   style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12),
+                                      color: Colors.red, fontSize: 12),
                                 )
                               else if (_showInvalidEndDateTimeError == true)
                                 Text(
                                   'Selecciona una fecha de fin valida',
                                   style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12),
+                                      color: Colors.red, fontSize: 12),
                                 )
                             ],
                           ),
