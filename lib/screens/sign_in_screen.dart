@@ -48,7 +48,7 @@ class _SignInScreenState extends State<SignInScreen> {
     }
   }
 
-  Future<void> registerWithGoogle() async {
+  /*Future<void> registerWithGoogle() async {
     final GoogleSignIn googleSignIn = GoogleSignIn();
 
     try {
@@ -72,7 +72,7 @@ class _SignInScreenState extends State<SignInScreen> {
     } catch (e) {
       print('Error al usar Google Sign-In: $e');
     }
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -109,12 +109,12 @@ class _SignInScreenState extends State<SignInScreen> {
                 ],
               ),
             ),
-            Divider(),
+            /*Divider(),
             Text("O registrate con Google"),
             ElevatedButton(
               onPressed: registerWithGoogle,
               child: Text('Continuar con Google'),
-            ),
+            ),*/
           ],
         ),
       ),

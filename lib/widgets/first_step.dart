@@ -67,7 +67,6 @@ class _FirstStepState extends State<FirstStep> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print(data);
       final direction = data['result']['formatted_address'];
       return direction;
     }

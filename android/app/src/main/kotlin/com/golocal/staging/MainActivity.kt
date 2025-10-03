@@ -1,4 +1,5 @@
-package com.example.worldwildprova
+package com.golocal.staging
+
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import android.content.Intent
@@ -8,7 +9,6 @@ import androidx.annotation.NonNull
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-
 class MainActivity: FlutterActivity() {
     private var initialLink: String? = null
 
@@ -16,7 +16,6 @@ class MainActivity: FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
 
         Log.d("MainActivity", "Intent data: ${intent?.data}")
-
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.worldwildprova.deeplink")
             .setMethodCallHandler { call, result ->

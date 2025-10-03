@@ -4,12 +4,14 @@ class EntradasCounter extends StatefulWidget {
   final ValueChanged<int> onChange;
   final int max;
   final bool enabled;
+  final int initialValue;
 
   const EntradasCounter(
       {Key? key,
       required this.onChange,
       required this.max,
-      required this.enabled})
+      required this.enabled,
+      this.initialValue = 0})
       : super(key: key);
 
   @override
@@ -17,10 +19,26 @@ class EntradasCounter extends StatefulWidget {
 }
 
 class _EntradasCounterState extends State<EntradasCounter> {
-  int _count = 0;
+  late int count;
+
+  @override
+  void initState() {
+    super.initState();
+    count = widget.initialValue; // inicializamos con el valor pasado
+  }
+
+  @override
+  void didUpdateWidget(covariant EntradasCounter oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialValue != widget.initialValue) {
+      setState(() {
+        count = widget.initialValue; // actualizamos el estado interno
+      });
+    }
+  }
 
   void _increment() {
-    if (_count >= widget.max) {
+    if (count >= widget.max) {
       // Mostrar SnackBar si ya llegó al máximo
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -31,17 +49,17 @@ class _EntradasCounterState extends State<EntradasCounter> {
     }
 
     setState(() {
-      _count += 1;
+      count += 1;
     });
-    widget.onChange.call(_count);
+    widget.onChange.call(count);
   }
 
   void _decrement() {
-    if (_count > 0) {
+    if (count > 0) {
       setState(() {
-        _count -= 1;
+        count -= 1;
       });
-      widget.onChange.call(_count);
+      widget.onChange.call(count);
     }
   }
 
@@ -51,19 +69,19 @@ class _EntradasCounterState extends State<EntradasCounter> {
       mainAxisSize: MainAxisSize.min, // que se ajuste al contenido
       children: [
         IconButton(
-          icon: Icon(Icons.remove),
+          icon: Icon(Icons.remove, size: 30),
           onPressed: widget.enabled ? _decrement : null,
         ),
         Container(
           width: 40,
           alignment: Alignment.center,
           child: Text(
-            '$_count',
-            style: TextStyle(fontSize: 18),
+            '$count',
+            style: TextStyle(fontSize: 20),
           ),
         ),
         IconButton(
-          icon: Icon(Icons.add),
+          icon: Icon(Icons.add, size: 30),
           onPressed: widget.enabled ? _increment : null,
         ),
       ],

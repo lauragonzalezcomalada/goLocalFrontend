@@ -1,8 +1,12 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:worldwildprova/config.dart';
+import 'package:worldwildprova/models_fromddbb/activity.dart';
+import 'package:worldwildprova/models_fromddbb/promo.dart';
 import 'package:worldwildprova/models_fromddbb/tagChip.dart';
 import 'package:worldwildprova/screens/second_screen.dart';
 import 'package:worldwildprova/widgets/eventcard.dart';
@@ -33,19 +37,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late bool itsMe;
   bool _showEditTags = false;
   bool _showEditDescription = false;
+  bool _showMessages = false;
   final TextEditingController _descriptionChangeController =
       TextEditingController();
+
+  String? _localImageUrl;
+  File? _localImage;
 
   @override
   void initState() {
     super.initState();
     authService = Provider.of<AuthService>(context, listen: false);
-
+    _loadUserToken();
     setState(() {
       userProfile = loadUserProfile(authService);
       itsMe = widget.foreignUserUuid == null;
     });
-    _loadUserToken();
   }
 
   Future<void> _loadUserToken() async {
@@ -59,11 +66,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (userProfile!.bio!.isNotEmpty) {
         _descriptionChangeController.text = userProfile.bio!;
       }
+      setState(() {
+        _localImageUrl = userProfile.userImageUrl;
+        _localImage = null;
+      });
       return userProfile;
     }
 
     // Si s'està enviant un foreignUserUuid es perquè estem mirant el perfil d'algú altre
-    print('foreign user');
     final body = jsonEncode({'user_uuid': widget.foreignUserUuid});
 
     final response =
@@ -74,10 +84,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
             body: body);
 
     if (response.statusCode == 200) {
-      var a = UserProfile.fromJson(jsonDecode(response.body));
-      return a;
+      UserProfile usPr = UserProfile.fromJson(jsonDecode(response.body));
+      setState(() {
+        _localImageUrl = usPr.userImageUrl;
+        _localImage = null;
+      });
+      return usPr;
     } else {
       return null;
+    }
+  }
+
+  void submitImageUpdate(File file) async {
+    var uri = Uri.parse('${Config.serverIp}/update_profile_image/');
+    var request = http.MultipartRequest('POST', uri);
+
+    // 🔑 Header con el Bearer token
+    request.headers['Authorization'] = 'Bearer $userToken';
+    request.files.add(
+      await http.MultipartFile.fromPath('image', file.path),
+    );
+    var response = await request.send();
+
+    if (response.statusCode == 200) {
+      setState(() {
+        userProfile = loadUserProfile(authService);
+      });
+    } else {
+      print("Error subiendo imagen: ${response.statusCode}");
     }
   }
 
@@ -98,6 +132,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
         userProfile = loadUserProfile(authService);
       });
     }
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker _picker = ImagePicker();
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 600,
+      maxHeight: 600,
+      imageQuality: 85,
+    );
+
+    if (picked != null) {
+      setState(() {
+        _localImage = File(picked.path);
+      });
+
+      submitImageUpdate(_localImage!);
+    }
+  }
+
+  void _removeImage() async {
+    setState(() {
+      _localImage = null;
+      _localImageUrl = null;
+    });
+    //submit partial update de la foto
+
+    final response = await http.post(
+      Uri.parse(
+        '${Config.serverIp}/remove_profile_image/',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $userToken'
+      },
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        userProfile = loadUserProfile(authService);
+        _localImage == null;
+        _localImageUrl == null;
+      });
+    }
+  }
+
+  void _showImageOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Cambiar imagen'),
+              onTap: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete),
+              title: const Text('Eliminar imagen'),
+              onTap: () {
+                Navigator.pop(context);
+                _removeImage();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _addDescription(String userUuid) {
@@ -156,12 +263,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(),
+        /*AppBar(
+          automaticallyImplyLeading: false,
+          actions: [
+            FutureBuilder<UserProfile?>(
+              future: userProfile,
+              builder: (context, snapshot) {
+                final hasUnread = snapshot.hasData &&
+                    snapshot.data != null &&
+                    snapshot.data!.unreadMessages!.isNotEmpty;
+
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () {
+                        Scaffold.of(context).openEndDrawer();
+                      },
+                    ),
+                    if (hasUnread)
+                      const Positioned(
+                        right: 6,
+                        top: 6,
+                        child: CircleAvatar(
+                          radius: 5,
+                          backgroundColor: Colors.red,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),*/
         endDrawer: itsMe
             ? FutureBuilder<UserProfile?>(
                 future: userProfile,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
+                    return Center(
+                      child: Image.asset(
+                        'assets/ojitos.gif',
+                        width: 100,
+                        height: 100,
+                      ),
+                    );
                   } else if (snapshot.hasError) {
                     return const Text('Error cargando perfil');
                   } else if (!snapshot.hasData || snapshot.data == null) {
@@ -188,7 +335,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         !_showEditDescription;
                                   });
                                 },
-                                child: const Text('Editar mi descripción')),
+                                child: const Text('EDITAR MI DESCRIPCIÓN')),
                             if (_showEditDescription == true)
                               Column(
                                 children: [
@@ -196,10 +343,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     padding: const EdgeInsets.fromLTRB(
                                         16.0, 0, 16.0, 0),
                                     child: TextField(
-                                      controller: _descriptionChangeController,
+                                        controller:
+                                            _descriptionChangeController,
+                                        minLines: 3,
+                                        maxLines: 6
 
-                                      // decoration: InputDecoration(hintText: user.bio),
-                                    ),
+                                        // decoration: InputDecoration(hintText: user.bio),
+                                        ),
                                   ),
                                   Align(
                                     alignment: Alignment.centerRight,
@@ -229,9 +379,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   setState(() {
                                     _showEditTags = !_showEditTags;
                                   });
-                                  print(_showEditTags);
                                 },
-                                child: Text('Editar mis tags')),
+                                child: Text('EDITAR MIS TAGS')),
                             if (_showEditTags == true)
                               Column(
                                 children: [
@@ -257,11 +406,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   ),
                                 ],
                               ),
+                            /*TextButton(
+                              onPressed: () {
+                                if (user.unreadMessages!.length > 0) {
+                                  setState(() {
+                                    _showMessages = !_showMessages;
+                                  });
+                                } else {
+                                  print('no hay mensajes');
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'No tienes mensajes por ahora...'),
+                                      duration: Duration(
+                                          seconds:
+                                              2), // tiempo que dura visible
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Stack(
+                                clipBehavior: Clip
+                                    .none, // para que el badge pueda "salirse"
+                                children: [
+                                  const Text('MENSAJES'),
+                                  if (user.unreadMessages!.length > 0)
+                                    Positioned(
+                                      right:
+                                          -20, // mueve el badge hacia afuera a la derecha
+                                      top: -10, // mueve el badge hacia arriba
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: const BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: const BoxConstraints(
+                                          minWidth: 20,
+                                          minHeight: 20,
+                                        ),
+                                        child: Text(
+                                          '${user.unreadMessages?.length}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            if (_showMessages == true)
+                              SizedBox(
+                                height: 200,
+                                child: ListView.builder(
+                                  itemCount: user.unreadMessages?.length ?? 0,
+                                  itemBuilder: (context, index) {
+                                    final message = user.unreadMessages![index];
+                                    return ListTile(
+                                      title: Text(message.message),
+                                    );
+                                  },
+                                ),
+                              ),*/
                             TextButton(
                                 onPressed: () {
                                   authService.logout();
                                 },
-                                child: Text('cerrar sesión'))
+                                child: Text('CERRAR SESIÓN'))
                           ],
                         ));
                   }
@@ -272,7 +486,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             future: userProfile,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return Center(
+                  child: Image.asset(
+                    'assets/ojitos.gif',
+                    width: 100,
+                    height: 100,
+                  ),
+                );
               } else if (snapshot.hasError || snapshot.data == null) {
                 // Si hubo error o no hay datos, cerramos sesión automáticamente
                 WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -283,9 +503,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Text('Sesión inválida. Redirigiendo...'));
               } else {
                 final userProfile = snapshot.data;
-                final PageController _pageController =
+                final PageController pageController =
                     PageController(viewportFraction: 0.40);
-                // ajusta el tamaño visible
+
                 return SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
@@ -294,24 +514,114 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           MainAxisAlignment.start, // centra verticalmente
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Center(
+                          child: Container(
+                            width: 205,
+                            height: 205,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .primary, // color del borde
+                                width: 5, // grosor del borde
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: itsMe
+                                  ? GestureDetector(
+                                      onTap:
+                                          (userProfile?.userImageUrl == null ||
+                                                  userProfile!
+                                                      .userImageUrl!.isEmpty)
+                                              ? _pickImage
+                                              : _showImageOptions,
+                                      child: Container(
+                                        width: 150,
+                                        height: 200,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          image: (userProfile?.userImageUrl !=
+                                                      null &&
+                                                  userProfile!
+                                                      .userImageUrl!.isNotEmpty)
+                                              ? DecorationImage(
+                                                  image: NetworkImage(
+                                                      userProfile
+                                                          .userImageUrl!),
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : null,
+                                        ),
+                                        child: (userProfile?.userImageUrl ==
+                                                    null ||
+                                                userProfile!
+                                                    .userImageUrl!.isEmpty)
+                                            ? Center(
+                                                child: Icon(
+                                                  Icons.camera_alt,
+                                                  size: 40,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .primary,
+                                                ),
+                                              )
+                                            : null,
+                                      ),
+                                    )
+                                  : Container(
+                                      width: 150,
+                                      height: 200,
+                                      decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary,
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          image: (userProfile?.userImageUrl !=
+                                                      null &&
+                                                  userProfile!
+                                                      .userImageUrl!.isNotEmpty)
+                                              ? DecorationImage(
+                                                  image: NetworkImage(
+                                                      userProfile
+                                                          .userImageUrl!),
+                                                  fit: BoxFit.cover,
+                                                )
+                                              : DecorationImage(
+                                                  image: AssetImage(
+                                                      'assets/solocarita.png'),
+                                                  fit: BoxFit.cover))),
+                            ),
+                          ),
+                        ),
                         Align(
-                            alignment: Alignment.centerRight,
+                            alignment: Alignment.center,
                             child: Text(
                               '@${userProfile!.username}',
                               style: TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.bold,
+                                  fontSize: 35,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'BarlowCondensed',
                                   color: Theme.of(context).colorScheme.primary),
                             )),
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Padding(
                               padding: const EdgeInsets.only(top: 10),
-                              child: Container(
+                              child: SizedBox(
                                 width: MediaQuery.of(context).size.width *
-                                    0.4, // limita al 50% del ancho de pantalla
+                                    0.90, // limita al 50% del ancho de pantalla
                                 child: Column(children: [
                                   if (userProfile.originLocation != null)
                                     Align(
@@ -320,8 +630,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             '📍${userProfile.originLocation}')),
                                   SizedBox(height: 20),
                                   if (userProfile.bio!.isNotEmpty)
-                                    Text(userProfile.bio!, softWrap: true),
-                                  if (userProfile.bio!.isEmpty)
+                                    Text(
+                                      userProfile.bio!,
+                                      textAlign: TextAlign.justify,
+                                      softWrap: true,
+                                      style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w400,
+                                          fontFamily: 'BarlowCondensed'),
+                                    ),
+                                  if (userProfile.bio!.isEmpty && itsMe)
                                     TextButton(
                                         onPressed: () {
                                           _addDescription(userProfile.uuid);
@@ -332,28 +650,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             SizedBox(width: 5),
-                            Container(
-                                width: MediaQuery.of(context).size.width *
-                                    0.45, // limita al 45% del ancho de pantalla
-                                height:
-                                    MediaQuery.of(context).size.height * 0.35,
-                                color: Colors.black54,
-                                child: userProfile.userImageUrl != null
-                                    ? Image.network(
-                                        userProfile.userImageUrl!,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Center(
-                                        child: Icon(Icons.camera_alt,
-                                            size: 40,
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary),
-                                      )),
                           ],
                         ),
-                        SizedBox(height: 10),
-                        if (userProfile.tags!.isNotEmpty)
+                        SizedBox(height: 20),
+                        if (userProfile.tags!.isNotEmpty && itsMe) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'Tus intereses',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(
+                                  width: 8), // espacio entre texto y línea
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.black,
+                                  thickness: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
                           Wrap(
                             spacing: 2.0, //espacio horizontal
                             runSpacing:
@@ -361,8 +681,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             children: userProfile.tags!
                                 .map((tag) => TagChip(tag: tag))
                                 .toList(),
-                          ),
-                        if (userProfile.tags!.isEmpty)
+                          )
+                        ],
+                        if (userProfile.tags!.isEmpty && itsMe)
                           TextButton(
                               onPressed: () {
                                 _addTags(userProfile.uuid);
@@ -374,7 +695,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             SizedBox(
                                 height: 200,
                                 child: PageView.builder(
-                                    controller: _pageController,
+                                    controller: pageController,
                                     itemCount: 5,
                                     padEnds: false,
                                     itemBuilder: (context, index) {
@@ -399,7 +720,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Center(
                                 child: TextButton(
                                   onPressed: () {
-                                    Navigator.push(
+                                    Navigator.pushAndRemoveUntil(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) =>
@@ -410,6 +731,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           fromMainScaffold: false,
                                         ),
                                       ),
+                                      (route) => false,
                                     );
                                   },
                                   child: const Text(
@@ -420,32 +742,122 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                           ])
-                        else
+                        else ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'Eventos asistidos',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(
+                                  width: 8), // espacio entre texto y línea
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.black,
+                                  thickness: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
                           SizedBox(
                             height: 300, // o el alto que necesites
                             child: PageView.builder(
-                              controller: _pageController,
+                              controller: pageController,
                               itemCount: userProfile.eventos!.length,
                               padEnds: false,
                               itemBuilder: (context, index) {
-                                final activity = userProfile.eventos![index];
+                                final evento = userProfile.eventos![index];
+                                final tipo;
+
+                                if (evento is Activity)
+                                  tipo = 'activity';
+                                else if (evento is Promo)
+                                  tipo = 'promo';
+                                else
+                                  tipo = 'privatePlan';
                                 return Align(
                                   alignment: Alignment.centerLeft,
                                   child: EventCard(
-                                      activityUuid: activity.uuid,
-                                      imageUrl: activity.imageUrl,
-                                      activityTitle: activity.name,
-                                      activityDateTime: activity.dateTime,
+                                      tipo: tipo,
+                                      activityUuid: evento.uuid,
+                                      imageUrl: evento.imageUrl,
+                                      activityTitle: evento.name,
+                                      activityDateTime: evento.dateTime,
                                       created_by_user:
-                                          activity.created_by_user != null
-                                              ? activity.created_by_user!
+                                          evento.created_by_user != null
+                                              ? evento.created_by_user!
                                               : false,
                                       userToken: userToken,
-                                      tiene_tickets: activity.tiene_tickets),
+                                      tiene_tickets: evento.tiene_tickets,
+                                      active: evento.active),
                                 );
                               },
                             ),
                           ),
+                        ],
+                        SizedBox(height: 20),
+                        if (userProfile.eventosCreados!.isNotEmpty) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              const Text(
+                                'Eventos creados',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(
+                                  width: 8), // espacio entre texto y línea
+                              Expanded(
+                                child: Divider(
+                                  color: Colors.black,
+                                  thickness: 2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
+                          SizedBox(
+                            height: 300, // o el alto que necesites
+                            child: PageView.builder(
+                              controller: pageController,
+                              itemCount: userProfile.eventosCreados?.length,
+                              padEnds: false,
+                              itemBuilder: (context, index) {
+                                final evento =
+                                    userProfile.eventosCreados![index];
+                                final tipo;
+                                if (evento is Activity)
+                                  tipo = 'activity';
+                                else if (evento is Promo)
+                                  tipo = 'promo';
+                                else
+                                  tipo = 'privatePlan';
+
+                                return Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: EventCard(
+                                      tipo: tipo,
+                                      activityUuid: evento.uuid,
+                                      imageUrl: evento.imageUrl,
+                                      activityTitle: evento.name,
+                                      activityDateTime: evento.dateTime,
+                                      created_by_user:
+                                          evento.created_by_user != null
+                                              ? evento.created_by_user!
+                                              : false,
+                                      userToken: userToken,
+                                      tiene_tickets: evento.tiene_tickets,
+                                      active: evento.active),
+                                );
+                              },
+                            ),
+                          ),
+                        ]
                       ],
                     ),
                   ),
@@ -454,22 +866,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }),
         bottomNavigationBar: widget.notFromMainScaffold == true
             ? BottomNavigationBar(
-                currentIndex: 2,
+                currentIndex: 0, // mismo control
                 onTap: (index) {
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
                       builder: (context) => MainScaffold(initialIndex: index),
                     ),
+                    (route) => false,
                   );
                 },
-                items: const [
+                items: [
+                  const BottomNavigationBarItem(
+                      icon: Icon(Icons.place, size: 35), label: 'Lugares'),
                   BottomNavigationBarItem(
-                      icon: Icon(Icons.place), label: 'Lugares'),
+                      icon: Image.asset(
+                        'assets/pincel3.png',
+                        height: 24, // ajustá el tamaño
+                        width: 24,
+                      ),
+                      label: 'Crear Plan'),
                   BottomNavigationBarItem(
-                      icon: Icon(Icons.brush), label: 'Crear plan'),
-                  BottomNavigationBarItem(
-                      icon: Icon(Icons.person), label: 'Perfil'),
+                      icon: Image.asset(
+                        'assets/solocarita.png',
+                        height: 24, // ajustá el tamaño
+                        width: 24,
+                      ),
+                      label: 'Perfil'),
                 ],
               )
             : null);

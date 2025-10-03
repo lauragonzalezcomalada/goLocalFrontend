@@ -12,6 +12,7 @@ import 'package:worldwildprova/models_fromddbb/asistentes.dart';
 import 'package:worldwildprova/models_fromddbb/item.dart';
 import 'package:worldwildprova/models_fromddbb/privatePlan.dart';
 import 'package:worldwildprova/models_fromddbb/tagChip.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'package:worldwildprova/widgets/dateBox.dart';
 import 'package:worldwildprova/widgets/itemAmountCounter.dart';
@@ -42,10 +43,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
   //late List<Asistente> asistentes;
   // late bool _asistenciaController;
 
-  bool _showAsistentes = false;
   bool _showNewItemForm = false;
-
-  bool _snackShown = false;
 
   final TextEditingController _itemNameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
@@ -55,7 +53,6 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
     super.initState();
     privatePlanUuid = widget.privatePlanUuid;
     fetchPrivatePlan().then((_) {
-      print('PrivatePlanDetail: privatePlanUuid: $privatePlanUuid');
       if (privatePlan!.userIsGoing == false) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showJoinPlanDialog();
@@ -93,6 +90,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: const Text('¿Querés unirte a este plan?'),
+                behavior: SnackBarBehavior.floating,
                 action: SnackBarAction(
                   label: 'Unirme',
                   onPressed: () {
@@ -125,7 +123,6 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
   }
 
   void _joinPlan() async {
-    print(Uri.parse('${Config.serverIp}/accept_invitation/'));
     final response =
         await http.post(Uri.parse('${Config.serverIp}/accept_invitation/'),
             headers: {
@@ -245,10 +242,6 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
   void _addNewItemToPlan() async {
     String itemName = _itemNameController.text;
     double itemAmount = double.parse(_amountController.text);
-
-    print(itemName);
-    print(itemAmount);
-
     final response = await http.post(
       Uri.parse('${Config.serverIp}/add_item/'),
       headers: {
@@ -282,7 +275,13 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
   @override
   Widget build(BuildContext context) {
     if (privatePlan == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: Image.asset(
+          'assets/ojitos.gif',
+          width: 100,
+          height: 100,
+        ),
+      );
     }
     String formattedStartDate =
         DateFormat('EEEE, d \'de\' MMMM \'a las\' HH:mm ', 'es_ES')
@@ -311,90 +310,117 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                         16), // Solo bordes superiores redondeados
                     topRight: Radius.circular(16),
                   ),
-                  child: privatePlan!.imageUrl == null
-                      ? ClipRRect(
-                          child: Container(
-                            height: 200,
-                            color: Colors.blue,
+
+                  /*/*SizedBox(
+                        height: 400,
+                        width: double.infinity,
+                        child: activity?.imageUrl != null &&
+                                activity!.imageUrl!.isNotEmpty
+                            ? Image.network(
+                                activity!.imageUrl!,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.asset(
+                                'assets/solocarita.png',
+                                fit: BoxFit.cover,
+                              ),
+                      ),*/*/
+                  child: Stack(children: [
+                    SizedBox(
+                        height: 400,
+                        width: double.infinity,
+                        child: privatePlan?.imageUrl != null &&
+                                privatePlan!.imageUrl!.isNotEmpty
+                            ? Image.network(privatePlan!.imageUrl!,
+                                fit: BoxFit.cover)
+                            : Image.asset('assets/solocarita.png',
+                                fit: BoxFit.cover)),
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 300, // altura del degradat
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.white70, // color de baix
+                              Colors.transparent, // color de dalt
+                            ],
                           ),
-                        )
-                      : Stack(children: [
-                          Image.network(
-                            privatePlan!
-                                .imageUrl!, // o usa NetworkImage con Image.network()
-                            fit: BoxFit.cover,
-                          ),
-                          Positioned(
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: 300, // altura del degradat
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topRight,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.white70, // color de baix
-                                    Colors.transparent, // color de dalt
-                                  ],
-                                ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                        top: 20,
+                        right: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Invita a quien quieras con este link!',
+                              style: TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.naranja_light,
+                                borderRadius: BorderRadius.circular(
+                                    16), // Rounded corners
+                              ),
+                              height: 50,
+                              width: MediaQuery.of(context).size.width * 0.94,
+                              child: Center(
+                                child:
+                                    SelectableText(privatePlan!.invitationCode!,
+                                        style: const TextStyle(
+                                          fontSize: 25,
+                                        )),
                               ),
                             ),
+                          ],
+                        )),
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      height: 300, // altura del degradat
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomRight,
+                            end: Alignment.topRight,
+                            colors: [
+                              Colors.white, // color de baix
+                              Colors.transparent, // color de dalt
+                            ],
                           ),
-                          Positioned(
-                              top: 20,
-                              right: 20,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  borderRadius: BorderRadius.circular(
-                                      16), // Rounded corners
-                                ),
-                                height: 50,
-                                width: 200,
-                                child: Center(
-                                    child: SelectableText(
-                                        privatePlan!.invitationCode!,
-                                        style: const TextStyle(fontSize: 35))),
-                              )),
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            height: 300, // altura del degradat
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomRight,
-                                  end: Alignment.topRight,
-                                  colors: [
-                                    Colors.white, // color de baix
-                                    Colors.transparent, // color de dalt
-                                  ],
-                                ),
-                              ),
-                            ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 5.0,
+                      right: 10.0,
+                      left: 2.0,
+                      child: Container(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          privatePlan!.name,
+                          style: const TextStyle(
+                            color: Color.fromARGB(255, 47, 1, 1),
+                            fontSize: 40,
+                            height: 1.0,
+                            fontWeight: FontWeight.w700,
                           ),
-                          Positioned(
-                            bottom: 5.0,
-                            right: 10.0,
-                            left: 2.0,
-                            child: Container(
-                              alignment: Alignment.centerRight,
-                              child: Text(
-                                privatePlan!.name,
-                                style: const TextStyle(
-                                    color: Color.fromARGB(255, 1, 16, 79),
-                                    fontSize: 30,
-                                    height: 1.0),
-                                softWrap: true,
-                                overflow: TextOverflow.visible,
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          )
-                        ]),
+                          softWrap: true,
+                          overflow: TextOverflow.visible,
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    )
+                  ]),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -402,7 +428,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                     children: [
                       Text(
                         formattedStartDate,
-                        style: const TextStyle(fontSize: 20),
+                        style: const TextStyle(fontSize: 23),
                       ),
                       //  Text(' de $startTime a $endTime',style: TextStyle(fontSize: 20),),
                       const Spacer(),
@@ -428,7 +454,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                           style: const TextStyle(
                               color: Color.fromARGB(255, 1, 16, 79),
                               fontSize: 20,
-                              fontFamily: 'BarlowCondensed_Regular'),
+                              fontFamily: 'BarlowCondensed'),
                         )),
                     MapaDesdeBackend(
                       lat: privatePlan!.lat!,
@@ -471,10 +497,10 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                                   width: double.infinity,
                                   decoration: BoxDecoration(
                                     color: accomplished
-                                        ? Colors.grey
-                                        : Colors.transparent,
+                                        ? AppTheme.logo
+                                        : AppTheme.logo.withOpacity(0.7),
                                     border: Border.all(
-                                      color: Colors.blue, // Color del borde
+                                      color: AppTheme.logo, // Color del borde
                                       width: 2.0, // Grosor del borde
                                     ),
                                     borderRadius: BorderRadius.circular(
@@ -547,14 +573,19 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                                 ? Colors.grey
                                 : Colors.transparent,
                             border: Border.all(
-                              color: Colors.blue, // Color del borde
+                              color: AppTheme.logo, // Color del borde
                               width: 2.0, // Grosor del borde
                             ),
                             borderRadius: BorderRadius.circular(30), //
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: [Text('+ añade más cositas')],
+                            children: [
+                              Text(
+                                '+ añade más cositas',
+                                style: TextStyle(fontSize: 20),
+                              )
+                            ],
                           ),
                         ),
                       ),
@@ -562,10 +593,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                     if (_showNewItemForm)
                       Column(
                         children: [
-                          Divider(
-                            color: Colors.black,
-                            thickness: 1,
-                          ),
+                          Divider(color: Colors.black, thickness: 2),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
@@ -574,7 +602,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                                 child: TextField(
                                   controller: _itemNameController,
                                   decoration: const InputDecoration(
-                                    hintText: 'nombre',
+                                    hintText: 'Que llevás?',
                                     border: OutlineInputBorder(),
                                   ),
                                   maxLines: 1,
@@ -582,11 +610,11 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                               ),
                               const Spacer(),
                               SizedBox(
-                                width: 100,
+                                width: 120,
                                 child: TextField(
                                   controller: _amountController,
                                   decoration: const InputDecoration(
-                                    hintText: 'cantidad',
+                                    hintText: 'Cuántos?',
                                     border: OutlineInputBorder(),
                                   ),
                                   keyboardType: TextInputType.number,
@@ -603,7 +631,6 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                               children: [
                                 ElevatedButton(
                                     onPressed: () {
-                                      print(_itemNameController.text.isEmpty);
                                       if (_itemNameController.text.isNotEmpty &&
                                           _amountController.text.isNotEmpty) {
                                         // Validar que los campos no estén vacíos
@@ -616,12 +643,14 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                                         ));
                                       }
                                     },
-                                    child: Text('añadir'),
+                                    child: Text(
+                                      'Añadir',
+                                      style: TextStyle(fontSize: 20),
+                                    ),
                                     style: ElevatedButton.styleFrom(
                                       alignment: Alignment
                                           .center, // Centra el contenido (opcional pero explícito)
 
-                                      minimumSize: Size(0, 30),
                                       side: BorderSide(
                                         color: Colors.red, // color del borde
                                         width: 2, // grosor del borde
@@ -641,16 +670,31 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0, // mismo control
         onTap: (index) {
-          Navigator.pushReplacement(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
-                builder: (context) => MainScaffold(initialIndex: index)),
+              builder: (context) => MainScaffold(initialIndex: index),
+            ),
+            (route) => false,
           );
         },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.place), label: 'Lugares'),
-          BottomNavigationBarItem(icon: Icon(Icons.brush), label: 'Crear plan'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+        items: [
+          const BottomNavigationBarItem(
+              icon: Icon(Icons.place, size: 35), label: 'Lugares'),
+          BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/pincel3.png',
+                height: 24, // ajustá el tamaño
+                width: 24,
+              ),
+              label: 'Crear Plan'),
+          BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/solocarita.png',
+                height: 24, // ajustá el tamaño
+                width: 24,
+              ),
+              label: 'Perfil'),
         ],
       ),
     );

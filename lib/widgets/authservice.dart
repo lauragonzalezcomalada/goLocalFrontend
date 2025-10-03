@@ -22,6 +22,8 @@ class AuthService with ChangeNotifier {
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
 
+  UserProfile? _currentUser;
+
   // Método para hacer login y obtener los tokens
   Future<bool> login(String username, String password) async {
     final response = await http.post(
@@ -39,7 +41,7 @@ class AuthService with ChangeNotifier {
 
       // Guardar los tokens de forma segura
       await _saveTokens(_accessToken!, _refreshToken!, _accessTokenExpiry!);
-
+      await getUserProfile(_accessToken);
       // Notificar a los oyentes (por ejemplo, la UI)
       notifyListeners();
 
@@ -139,9 +141,14 @@ class AuthService with ChangeNotifier {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return UserProfile.fromJson(data);
+
+      _currentUser = UserProfile.fromJson(data);
+      notifyListeners();
+      return _currentUser;
     } else {
       return null;
     }
   }
+
+  UserProfile? get currentUser => _currentUser;
 }

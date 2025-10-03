@@ -22,11 +22,25 @@ class _PrivatePlansListState extends State<PrivatePlansList> {
   String? userToken;
   List<PrivatePlan> privatePlans = [];
 
+  final TextEditingController _searchController = TextEditingController();
+  List<PrivatePlan> _filteredPrivatePlans = [];
+
   @override
   void initState() {
-    print('initState pRIVATE PLANS');
     super.initState();
     _checkLoggedStatus();
+  }
+
+  void filterActivities() {
+    final query = _searchController.text.toLowerCase();
+
+    setState(() {
+      _filteredPrivatePlans = privatePlans.where((item) {
+        final matchesName = item.name.toLowerCase().contains(query);
+        // La privatePlan solo se filtra por nombre
+        return matchesName;
+      }).toList();
+    });
   }
 
   Future<void> _checkLoggedStatus() async {
@@ -94,17 +108,31 @@ class _PrivatePlansListState extends State<PrivatePlansList> {
                 )))
         : Column(
             children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    labelStyle: TextStyle(fontSize: 20),
+                    labelText: 'Buscar',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                ),
+              ),
               Expanded(
                 child: ListView.builder(
-                    itemCount: privatePlans!.length,
+                    itemCount: privatePlans.length,
                     itemBuilder: (context, index) {
-                      final activity = privatePlans![index];
+                      final privatePlan = privatePlans[index];
                       bool showHeader = false;
                       if (index == 0) {
                         showHeader = true;
                       } else {
-                        final previousActivity = privatePlans![index - 1];
-                        showHeader = activity.dateTime.day !=
+                        final previousActivity = privatePlans[index - 1];
+                        showHeader = privatePlan.dateTime.day !=
                             previousActivity.dateTime.day;
                       }
 
@@ -114,7 +142,7 @@ class _PrivatePlansListState extends State<PrivatePlansList> {
                             Padding(
                               padding: const EdgeInsets.symmetric(
                                   vertical: 8, horizontal: 16),
-                              child: headerForDate(activity.dateTime),
+                              child: headerForDate(privatePlan.dateTime),
                             ),
                           GestureDetector(
                               onTap: () {
@@ -122,12 +150,12 @@ class _PrivatePlansListState extends State<PrivatePlansList> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (context) => PrivatePlanDetail(
-                                              privatePlanUuid: activity.uuid,
+                                              privatePlanUuid: privatePlan.uuid,
                                               userToken: userToken!,
                                             )));
                               },
                               child: Column(children: [
-                                PrivatePlanCard(privatePlan: activity),
+                                PrivatePlanCard(privatePlan: privatePlan),
                                 const SizedBox(height: 5)
                               ])),
                         ],

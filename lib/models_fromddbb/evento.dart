@@ -9,6 +9,7 @@ abstract class Evento {
   final DateTime dateTime;
   final bool? created_by_user;
   final bool? tiene_tickets;
+  final bool? active;
 
   Evento(
       {required this.uuid,
@@ -16,7 +17,8 @@ abstract class Evento {
       required this.name,
       required this.dateTime,
       required this.created_by_user,
-      this.tiene_tickets});
+      this.tiene_tickets,
+      this.active});
 
   factory Evento.fromJson(Map<String, dynamic> json) {
     switch (json['type']) {

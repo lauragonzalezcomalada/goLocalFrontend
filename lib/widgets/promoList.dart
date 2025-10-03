@@ -30,9 +30,9 @@ class _PromoListState extends State<PromoList> {
   bool _showTagSelector = false;
 
   List<Promo> promos = [];
-  List<Promo> _filteredPromos = [];
 
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  List<Promo> _filteredPromos = [];
 
   List<Tag> tags = [];
 
@@ -50,9 +50,24 @@ class _PromoListState extends State<PromoList> {
     placeName = widget.placeName;
     fetchPromos();
     fetchTags();
+    initSelectedTags();
     _searchController.addListener(() {
       filterPromos();
     });
+  }
+
+  void initSelectedTags() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    if (await authService.isLoggedIn() == true) {
+      final user =
+          await authService.getUserProfile(await authService.getAccessToken());
+      if (user != null) {
+        setState(() {
+          _selectedTags = user.tags!.map((tagId) => tagId.id).toList();
+        });
+      }
+      filterPromos();
+    }
   }
 
   void filterPromos() {
@@ -63,14 +78,13 @@ class _PromoListState extends State<PromoList> {
       _filteredPromos = promos.where((item) {
         final matchesName = item.name.toLowerCase().contains(query);
 
-        //no hi ha tags
         if (selectedTagIds.isEmpty) {
           return matchesName;
         }
 
-        final activityTagIds = (item.tags ?? []).map((tag) => tag.id).toList();
+        final promoTagIds = (item.tags ?? []).map((tag) => tag.id).toList();
         final matchesTags =
-            activityTagIds.any((tagId) => selectedTagIds.contains(tagId));
+            promoTagIds.any((tagId) => selectedTagIds.contains(tagId));
 
         // La actividad debe cumplir ambos filtros
         return matchesName && matchesTags;
@@ -87,13 +101,11 @@ class _PromoListState extends State<PromoList> {
   // Función para hacer la solicitud GET
   Future<void> fetchPromos() async {
     try {
-      final response = await http
-          .get(Uri.parse('${Config.serverIp}/promos/?place_uuid=$placeUuid'));
-
+      final response = await http.get(Uri.parse('${Config.serverIp}/promos/'));
+      print('status code promos: ${response.statusCode}');
+      print('body promo: ${response.body}');
       if (response.statusCode == 200) {
-        print('response okay');
         List<dynamic> data = json.decode(response.body);
-        print('decode okay');
         setState(() {
           promos = data
               .map((activityJson) => Promo.fromJson(activityJson, false))
@@ -101,12 +113,33 @@ class _PromoListState extends State<PromoList> {
           _filteredPromos = promos;
         });
       } else {
-        print('error de load promos');
         // Si la respuesta es un error, muestra un mensaje
         throw Exception('Failed to load places');
       }
     } catch (e) {
-      print('error al trycatch');
+      // Si ocurre un error en la solicitud
+      print('Error: $e');
+    }
+  }
+
+  Future<void> updateViews(String uuid) async {
+    try {
+      final response = await http.get(
+          Uri.parse('${Config.serverIp}/register_view/?promo=True&uuid=$uuid'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        /* setState(() {
+          activities = data
+              .map((activityJson) => Activity.fromJson(activityJson, false))
+              .toList();
+          _filteredActivities = activities;
+        });*/
+      } else {
+        // Si la respuesta es un error, muestra un mensaje
+        throw Exception('Failed to load places');
+      }
+    } catch (e) {
       // Si ocurre un error en la solicitud
       print('Error: $e');
     }
@@ -132,9 +165,6 @@ class _PromoListState extends State<PromoList> {
   void _promoPressed(String promo_uuid) async {
     final authService = Provider.of<AuthService>(context, listen: false);
     final isLoggedIn = await authService.isLoggedIn();
-
-    print('is logged in');
-    print(isLoggedIn);
     if (isLoggedIn == false) {
       Future.microtask(() => showLoginAlert(context,
           'Regístrate para poder tener más información de los planes!'));
@@ -183,6 +213,7 @@ class _PromoListState extends State<PromoList> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
+                  labelStyle: TextStyle(fontSize: 20),
                   labelText: 'Buscar',
                   prefixIcon: const Icon(Icons.search),
                   border: OutlineInputBorder(
@@ -196,6 +227,38 @@ class _PromoListState extends State<PromoList> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (tags.isNotEmpty)
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: _selectedTags.map((tagId) {
+                            // Busca el Tag completo por id para mostrar su nombre
+                            final tag = tags.firstWhere((t) => t.id == tagId);
+                            return TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedTags.remove(tagId);
+                                });
+                                filterPromos();
+                              },
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                backgroundColor: Colors.grey.shade300,
+                                minimumSize: const Size(0, 0),
+                              ),
+                              child: Text(
+                                tag.name,
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ),
                   TextButton(
                       onPressed: () {
                         setState(() {
@@ -218,7 +281,7 @@ class _PromoListState extends State<PromoList> {
                       ),
                       child: const Text(
                         'TAGS',
-                        style: TextStyle(fontSize: 10),
+                        style: TextStyle(fontSize: 15),
                       )),
                 ],
               ),
@@ -271,130 +334,5 @@ class _PromoListState extends State<PromoList> {
                   }),
             )
           ]);
-  }
-}
-
-class PrommoCard extends StatelessWidget {
-  const PrommoCard({
-    super.key,
-    required this.promo,
-  });
-
-  final Promo promo;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-        onTap: () {
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => PromoDetail(
-                        promoUuid: promo.uuid,
-                      )));
-        },
-        child: Column(children: [
-          Container(
-            height: 100,
-            width: MediaQuery.of(context).size.width * 0.95,
-            child: Stack(
-              children: [
-                // Imagen de fondo
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: promo.imageUrl == null
-                        ? Container(
-                            color: Colors.blue, // Color fijo
-                            width: 200,
-                            height: 150,
-                          )
-                        : Image.network(
-                            promo
-                                .imageUrl!, // o usa NetworkImage con Image.network()
-                            fit: BoxFit.cover,
-                          ),
-                  ),
-                ),
-                // Capa oscura para mejor lectura del texto
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.black.withOpacity(0.4),
-                    ),
-                  ),
-                ),
-
-                Positioned(
-                    bottom: 5,
-                    left: 10,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(promo.name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                            )),
-                        if (promo.shortDesc != null)
-                          Text(
-                            promo.shortDesc!,
-                            style: const TextStyle(
-                              color: Colors.white,
-                            ),
-                          ),
-                      ],
-                    )),
-                Positioned(
-                  bottom: 6,
-                  right: 5,
-                  child: Row(
-                    children: [
-                      if (promo.activityCreatorImageUrl != null)
-                        CircleAvatar(
-                            backgroundImage:
-                                NetworkImage(promo.activityCreatorImageUrl!),
-                            radius: 18)
-                      else
-                        CircleAvatar(backgroundColor: Colors.amber, radius: 30),
-                    ],
-                  ),
-                ),
-
-                if (promo.tags!.isNotEmpty)
-                  Positioned(
-                    top: 6,
-                    right: 5,
-                    child: Wrap(
-                      spacing: 4,
-                      runSpacing: 2,
-                      children: (promo.tags ?? []).map((tag) {
-                        return Container(
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.8),
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.primary,
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            tag.name,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 5)
-        ]));
   }
 }

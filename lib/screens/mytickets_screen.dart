@@ -20,24 +20,23 @@ class MyTicketsScreen extends StatefulWidget {
 
 class _MyticketsScreenState extends State<MyTicketsScreen> {
   List<Ticket> myTickets = [];
+  late AuthService authService;
+
   @override
   void initState() {
     super.initState();
+    authService = Provider.of<AuthService>(context, listen: false);
     _fetchTickets();
   }
 
   void _fetchTickets() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
     final userToken = await authService.getAccessToken();
-    print(userToken);
     final response = await http.get(
       Uri.parse(
           Config.serverIp + '/get_tickets?activity_uuid=${widget.eventUuid}'),
       headers: {'Authorization': 'Bearer ${userToken}'},
     );
 
-    print(response.statusCode);
-    print(response.body);
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
       setState(() {
@@ -46,7 +45,6 @@ class _MyticketsScreenState extends State<MyTicketsScreen> {
             .toList();
       });
     }
-    print(myTickets);
   }
 
   @override
@@ -72,12 +70,18 @@ class _MyticketsScreenState extends State<MyTicketsScreen> {
                             .secondary
                             .withOpacity(0.8),
                         borderRadius: BorderRadius.circular(20),
+                        image: DecorationImage(
+                          image: AssetImage(
+                              'assets/backgroundticketsimage.png'), // tu imagen
+                          fit: BoxFit
+                              .cover, // ajusta la imagen al tamaño del container
+                        ),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 0, 15.0, 0),
+                            padding: const EdgeInsets.fromLTRB(0, 1.0, 8.0, 0),
                             child: Align(
                               alignment: Alignment.bottomRight,
                               child: Card(
@@ -103,12 +107,17 @@ class _MyticketsScreenState extends State<MyTicketsScreen> {
                             height: 150,
                             width: 300,
                             decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(
-                                  16), // ajustá el radio que prefieras
-                              image: DecorationImage(
-                                image: NetworkImage(ticket!.eventImageUrl!),
-                                fit: BoxFit.cover,
-                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              image: ticket.eventImageUrl != null &&
+                                      ticket.eventImageUrl!.isNotEmpty
+                                  ? DecorationImage(
+                                      image:
+                                          NetworkImage(ticket.eventImageUrl!),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : DecorationImage(
+                                      image:
+                                          AssetImage('assets/solocarita.png')),
                             ),
                           ),
                           SizedBox(
@@ -138,18 +147,48 @@ class _MyticketsScreenState extends State<MyTicketsScreen> {
                           SizedBox(
                             height: 200,
                             width: 200,
-                            child: Image.network(
-                              ticket!
-                                  .qrUrl!, // o usa NetworkImage con Image.network()
-                              fit: BoxFit.cover,
-                            ),
+                            child: ticket.qrUrl != null
+                                ? /* Image.asset(
+                                'assets/solocarita.png'), */
+                                Image.network(
+                                    ticket
+                                        .qrUrl, // o usa NetworkImage con Image.network()
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.asset('/assets/solocarita.png'),
                           ),
                           SizedBox(height: 10),
-                          Text(formattedStartDate),
-                          Text(
-                            ticket.compradorName,
-                            style: TextStyle(fontSize: 20),
-                          )
+                          Card(
+                            shape: RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadiusGeometry.circular(20)),
+                            elevation: 0,
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                // runSpacing: 8,
+                                children: [
+                                  Text(
+                                    formattedStartDate,
+                                    style: TextStyle(fontSize: 20),
+                                  ),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    ticket.compradorName,
+                                    textAlign: TextAlign.center,
+                                    softWrap:
+                                        true, // permite que se divida en varias líneas
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  )
+                                ],
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -158,20 +197,31 @@ class _MyticketsScreenState extends State<MyTicketsScreen> {
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: 0, // mismo control
           onTap: (index) {
-            Navigator.pushReplacement(
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(
-                builder: (context) => MainScaffold(
-                  initialIndex: index,
-                ),
+                builder: (context) => MainScaffold(initialIndex: index),
               ),
+              (route) => false,
             );
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.place), label: 'Lugares'),
+          items: [
+            const BottomNavigationBarItem(
+                icon: Icon(Icons.place, size: 35), label: 'Lugares'),
             BottomNavigationBarItem(
-                icon: Icon(Icons.brush), label: 'Crear plan'),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Perfil'),
+                icon: Image.asset(
+                  'assets/pincel3.png',
+                  height: 24, // ajustá el tamaño
+                  width: 24,
+                ),
+                label: 'Crear Plan'),
+            BottomNavigationBarItem(
+                icon: Image.asset(
+                  'assets/solocarita.png',
+                  height: 24, // ajustá el tamaño
+                  width: 24,
+                ),
+                label: 'Perfil'),
           ],
         ));
   }

@@ -18,6 +18,8 @@ class PrivatePlan extends ListableItem implements Evento {
   final bool? created_by_user;
   @override
   final bool? tiene_tickets;
+  @override
+  final bool? active;
 
   final String? shortDesc;
   final String? desc;
@@ -34,62 +36,64 @@ class PrivatePlan extends ListableItem implements Evento {
   final List<Item>? items;
   bool? userIsGoing;
 
-  PrivatePlan({
-    required this.uuid,
-    required this.name,
-    this.shortDesc,
-    this.desc,
-    this.placeName,
-    this.lat,
-    this.long,
-    this.imageUrl,
-    this.created_by_user,
-    this.going,
-    this.conReserva,
-    this.gratis,
-    this.price,
-    required this.dateTime,
-    this.invitationCode,
-    this.invitados,
-    this.items,
-    this.userIsGoing,
-    this.tiene_tickets,
-  });
+  PrivatePlan(
+      {required this.uuid,
+      required this.name,
+      this.shortDesc,
+      this.desc,
+      this.placeName,
+      this.lat,
+      this.long,
+      this.imageUrl,
+      this.created_by_user,
+      this.going,
+      this.conReserva,
+      this.gratis,
+      this.price,
+      required this.dateTime,
+      this.invitationCode,
+      this.invitados,
+      this.items,
+      this.userIsGoing,
+      this.tiene_tickets,
+      this.active});
 
   factory PrivatePlan.fromJson(Map<String, dynamic> json) {
     var a = PrivatePlan(
-      uuid: json['uuid'],
-      name: json['name'],
-      shortDesc: json['shortDesc'],
-      desc: json['desc'],
-      lat: json['lat'],
-      long: json['long'],
-      going: json['user_isgoing'],
-      gratis: json['gratis'],
-      price: json['price'],
-      // imageUrl: Config.serverIp +
-      //   json["image"]
-      /*== null
+        uuid: json['uuid'],
+        name: json['name'],
+        shortDesc: json['shortDesc'],
+        desc: json['desc'],
+        lat: json['lat'],
+        long: json['long'],
+        going: json['user_isgoing'],
+        gratis: json['gratis'],
+        price: json['price'],
+        // imageUrl: Config.serverIp +
+        //   json["image"]
+        /*== null
           ? null
           : fromUserProfile == false
               ? Config.serverIp + json["image"]
               : json["image"]*/
-      //,
-      dateTime: DateTime.parse(json['startDateandtime']),
-      invitationCode: json['invitation_code'],
-      invitados: (json['invited_users'] != null)
-          ? (json['invited_users'] as List)
-              .map((invitadoJson) => UserProfile.fromServerJson(invitadoJson))
-              .toList()
-          : <UserProfile>[],
-      items: json['items'] != null
-          ? (json['items'] as List)
-              .map((itemJson) => Item.fromJson(itemJson))
-              .toList()
-          : [],
-      userIsGoing: json['user_is_invited'],
-      tiene_tickets: json['tiene_ticket'],
-    );
+        //,
+        dateTime: DateTime.parse(json['startDateandtime']),
+        invitationCode: json['invitation_code'] != null
+            ? 'golocal://privateplaninvitation/' + json['invitation_code']
+            : '',
+        invitados: (json['invited_users'] != null)
+            ? (json['invited_users'] as List)
+                .map((invitadoJson) => UserProfile.fromServerJson(invitadoJson))
+                .toList()
+            : <UserProfile>[],
+        items: json['items'] != null
+            ? (json['items'] as List)
+                .map((itemJson) => Item.fromJson(itemJson))
+                .toList()
+            : [],
+        userIsGoing: json['user_is_invited'],
+        tiene_tickets: json['tiene_ticket'],
+        active: json['active']);
     return a;
   }
 }

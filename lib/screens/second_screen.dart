@@ -60,9 +60,9 @@ class _SecondScreenState extends State<SecondScreen>
             ),
             controller: _tabController,
             tabs: [
-              Tab(text: 'Planes'),
-              Tab(text: 'Promos'),
-              Tab(text: 'Planes privados')
+              Tab(child: Center(child: Text('Planes'))),
+              Tab(child: Center(child: Text('Promos'))),
+              Tab(child: Center(child: Text('Privados')))
             ],
           ),
         ),
@@ -76,20 +76,31 @@ class _SecondScreenState extends State<SecondScreen>
             ? BottomNavigationBar(
                 currentIndex: 0, // mismo control
                 onTap: (index) {
-                  Navigator.pushReplacement(
+                  Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                        builder: (context) =>
-                            MainScaffold(initialIndex: index)),
+                      builder: (context) => MainScaffold(initialIndex: index),
+                    ),
+                    (route) => false,
                   );
                 },
-                items: const [
+                items: [
+                  const BottomNavigationBarItem(
+                      icon: Icon(Icons.place, size: 35), label: 'Lugares'),
                   BottomNavigationBarItem(
-                      icon: Icon(Icons.place), label: 'Lugares'),
+                      icon: Image.asset(
+                        'assets/pincel3.png',
+                        height: 24, // ajustá el tamaño
+                        width: 24,
+                      ),
+                      label: 'Crear Plan'),
                   BottomNavigationBarItem(
-                      icon: Icon(Icons.brush), label: 'Crear plan'),
-                  BottomNavigationBarItem(
-                      icon: Icon(Icons.person), label: 'Perfil'),
+                      icon: Image.asset(
+                        'assets/solocarita.png',
+                        height: 24, // ajustá el tamaño
+                        width: 24,
+                      ),
+                      label: 'Perfil'),
                 ],
               )
             : null);

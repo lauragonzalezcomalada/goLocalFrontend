@@ -1,14 +1,14 @@
 import 'package:flutter/widgets.dart';
 
 class Entrada {
-  final String uuid;
+  final String? uuid;
   final String titulo;
   final String? desc;
   final double precio;
   final int disponibles;
 
   Entrada(
-      {required this.uuid,
+      {this.uuid,
       required this.titulo,
       this.desc,
       required this.precio,
@@ -22,5 +22,15 @@ class Entrada {
       disponibles: json['disponibles'],
       precio: json['precio'],
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uuid': uuid,
+      'nombre': titulo,
+      'descripcion': desc,
+      'precio': precio,
+      'cantidad': disponibles,
+    };
   }
 }

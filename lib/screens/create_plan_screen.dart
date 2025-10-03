@@ -5,7 +5,15 @@ import 'package:path/path.dart' as path;
 import 'package:http_parser/http_parser.dart';
 import 'package:intl/intl.dart'; // per les dates, per formatejarles
 import 'package:worldwildprova/config.dart';
+import 'package:worldwildprova/models_fromddbb/entrada.dart';
+import 'package:worldwildprova/models_fromddbb/reserva.dart';
 import 'package:worldwildprova/models_fromddbb/userprofile.dart';
+import 'package:worldwildprova/screens/activitydetail_screen.dart';
+import 'package:worldwildprova/screens/promodetail_screen.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
+import 'package:worldwildprova/widgets/entradasForm.dart';
+import 'package:worldwildprova/widgets/privatePlanDetail.dart';
+import 'package:worldwildprova/widgets/reservasForm.dart';
 import 'package:worldwildprova/widgets/usages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,11 +41,12 @@ class CreatePlanScreen extends StatefulWidget {
 
 class _CreatePlanScreenState extends State<CreatePlanScreen> {
   String? userToken;
-
+  late AuthService authService;
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('es_ES', null);
+    authService = Provider.of<AuthService>(context, listen: false);
     _checkLoggedStatus();
     _searchFocusNode.addListener(() {
       if (!_searchFocusNode.hasFocus) {
@@ -51,7 +60,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   }
 
   Future<void> _checkLoggedStatus() async {
-    final authService = Provider.of<AuthService>(context, listen: false);
     final isLoggedIn = await authService.isLoggedIn();
     if (!isLoggedIn) {
       Future.microtask(() => showLoginAlert(
@@ -69,14 +77,14 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   final TextEditingController _shortDescriptionController =
       TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
+  //final TextEditingController _priceController = TextEditingController();
   final TextEditingController _urlEntradas = TextEditingController();
-  final TextEditingController _urlInstagram = TextEditingController();
-  final TextEditingController _urlWeb = TextEditingController();
   final TextEditingController _placeController = TextEditingController();
   List<int> _selectedTags = []; // Aquí almacenamos los tags seleccionados
   DateTime? _selectedDateTime;
   DateTime? _selectedEndDateTime;
+  List<Entrada> entradasGuardadas = [];
+  List<Reserva> reservasGuardadas = [];
 
   TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -91,9 +99,17 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   double? _longitude;
   String? direccion;
 
-  // Variable para controlar la opción seleccionada y el error
+  // Variable para controlar de es Gratis la opción seleccionada y el error
   bool? _selectedGratisOption;
   bool _showGratisError = false;
+
+  // Variable para controlar de Se necesita reservala opción seleccionada y el error
+  bool? _selectedReservaOption;
+  bool _showReservaError = false;
+
+  // Variable para controlar de Se necesita reservala opción seleccionada y el error
+  bool? _selectedEntradasOption;
+  bool _showEntradasError = false;
 
   bool _showDateTimeError = false;
   bool _showNoEndDateTimeError = false;
@@ -121,8 +137,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   //Crear l'element per a triar la data i hora
   Future<void> pickStartDateTime() async {
-    print(DateTime.now());
-    print(DateTime.now().toLocal());
     final date = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -150,7 +164,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(date!),
     );
-    print(time);
     if (time == null) return;
     setState(() {
       _selectedEndDateTime =
@@ -162,14 +175,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   //Obtener sugerencias desde Places Autocomplete
   Future<void> _getPlaceSuggestions(String input) async {
-    print('get place suggestions');
-    print(input);
     final url =
         'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$googleApiKey';
-    print(url);
     final response = await http.get(Uri.parse(url));
-    print(response.statusCode);
-    print(response.body);
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       setState(() {
@@ -203,27 +211,32 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   void _resetForm() async {
     _formKey.currentState?.reset();
+
     _titleController.clear();
     _shortDescriptionController.clear();
     _descriptionController.clear();
-    _priceController.clear();
     _urlEntradas.clear();
-    _urlInstagram.clear();
-    _urlWeb.clear();
-    _placeController.clear();
 
     setState(() {
       _selectedPlaceId = null;
+      _selectedPlanType = null;
+      direccion = null;
       _suggestions = [];
       _latitude = null;
       _longitude = null;
       _selectedGratisOption = null;
+      _selectedPlaceId = null;
       _selectedTags = [];
       _selectedDateTime = null;
       _selectedEndDateTime = null;
       _selectedPlan = false;
       _selectedPromo = false;
       _selectedPrivatePlan = false;
+      _selectedEntradasOption = null;
+      _selectedReservaOption = null;
+      entradasGuardadas = [];
+      reservasGuardadas = [];
+      _placeController.clear();
     });
     final token = await userToken;
     if (token == null) {
@@ -231,6 +244,59 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
           context, 'Registrate para poder empezar a crear tus planes!');
       return;
     }
+  }
+
+  void handleEsGratisChange(bool? value) {
+    if (value == null) return; // evita el crash
+
+    if (value == false && authService.currentUser!.creador == false) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Color.fromARGB(255, 1, 16, 79).withOpacity(0.5),
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
+              width: 2, // ✅ Grosor del borde
+            ), // ✅ Bordes redondeados
+          ),
+          content: Text(
+              'Si quieres crear un plan de pago, debes registrarte como creador. Puedes hacerlo desde esta página: xxx '),
+        ),
+      );
+      return;
+    }
+
+    /* if (value == true && authService.currentUser!.availableFreePlans == 0) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Color.fromARGB(255, 1, 16, 79).withOpacity(0.5),
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
+              width: 2, // ✅ Grosor del borde
+            ), // ✅ Bordes redondeados
+          ),
+          content: Text(
+              'Te quedaste sin planes gratuitos para crear, accede a esta página para más información.'),
+        ),
+      );
+      return;
+    }*/
+
+    setState(() {
+      _selectedGratisOption = value;
+      _showGratisError = false; // Quita el error si selecciona
+      _selectedReservaOption = null;
+      _selectedEntradasOption = null;
+    });
   }
 
   bool _validate() {
@@ -245,6 +311,30 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     if (_selectedGratisOption == null) {
       setState(() {
         _showGratisError = true;
+      });
+      other_errors = true;
+    }
+
+    if (_selectedGratisOption != null &&
+        _selectedGratisOption == true &&
+        _selectedReservaOption == null) {
+      setState(() {
+        _showReservaError = true;
+      });
+      other_errors = true;
+    }
+
+    //ERROR DE SI RESERVA = TRUE PERÒ NO HI HA RESERVES
+    if (_selectedReservaOption == true && reservasGuardadas.isEmpty) {
+      setState(() {
+        _showReservaError = true;
+      });
+      other_errors = true;
+    }
+
+    if (_selectedEntradasOption == true && entradasGuardadas.isEmpty) {
+      setState(() {
+        _showEntradasError = true;
       });
       other_errors = true;
     }
@@ -283,25 +373,40 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       request.fields['name'] = _titleController.text;
       request.fields['shortDesc'] = _shortDescriptionController.text;
       request.fields['desc'] = _descriptionController.text;
-      request.fields['instagram_link'] = _urlInstagram.text;
       request.fields['tags'] = jsonEncode(_selectedTags);
       //Default price 0 si es gratis
-      request.fields['price'] = '0';
+      //request.fields['price'] = '0';
       bool gratis = _selectedGratisOption ?? false;
-      if (!gratis) {
-        request.fields['gratis'] = gratis.toString();
-        request.fields['price'] = _priceController.text;
-        request.fields['tickets_link'] = _urlEntradas.text;
+      request.fields['gratis'] = gratis.toString();
+
+      if (gratis) {
+        bool reservaNecesaria = _selectedReservaOption ?? false;
+        request.fields['reserva'] = reservaNecesaria.toString();
+        if (reservaNecesaria) {
+          request.fields['reservas'] = jsonEncode(
+              reservasGuardadas.map((reserva) => reserva.toJson()).toList());
+        }
+      } else {
+        // no gratis
+        bool controlEntradas = _selectedEntradasOption ?? false;
+        request.fields['centralizarEntradas'] = controlEntradas.toString();
+
+        if (controlEntradas) {
+          request.fields['entradas'] = jsonEncode(
+              entradasGuardadas.map((entrada) => entrada.toJson()).toList());
+        } else {
+          request.fields['tickets_link'] = _urlEntradas.text;
+        }
       }
+
       if (_selectedPlaceId != null) {
         await _getCoordinatesFromPlaceId(_selectedPlaceId!);
+        request.fields['lat'] = _latitude!.toString();
+        request.fields['lng'] = _longitude!.toString();
+        request.fields['direccion'] = direccion!;
       }
-      request.fields['lat'] = _latitude!.toString();
-      request.fields['long'] = _longitude!.toString();
-      request.fields['direccion'] = direccion!;
+
       request.fields['startDateandtime'] = _selectedDateTime!.toIso8601String();
-      //request.fields['endDateandtime'] =
-      //    _selectedEndDateTime!.toIso8601String();
 
       switch (_selectedPlanType!) {
         case PlanType.plan:
@@ -309,12 +414,12 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
         case PlanType.promo:
           request.fields['tipoEvento'] = '1';
+          request.fields['endDateandtime'] =
+              _selectedEndDateTime!.toIso8601String();
 
         case PlanType.private:
           request.fields['tipoEvento'] = '2';
       }
-
-      //request.fields['isPlanSelected'] = _selectedPlan.toString();
 
       if (_selectedImage != null) {
         final mimeType = lookupMimeType(_selectedImage!.path) ?? 'image/jpeg';
@@ -328,9 +433,20 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
         );
       }
 
-      final response = await request.send();
-
+      var response = await request.send();
+      if (response.statusCode == 401) {
+        await authService.refreshAccessToken();
+        String? newAccessToken = await authService.getAccessToken();
+        if (newAccessToken == null) return;
+        final newRequest = http.MultipartRequest(request.method, request.url);
+        newRequest.fields.addAll(request.fields);
+        newRequest.files.addAll(request.files);
+        newRequest.headers.addAll(request.headers);
+        newRequest.headers['Authorization'] = 'Bearer $newAccessToken';
+        response = await newRequest.send();
+      }
       if (response.statusCode == 201) {
+        var resp = await response.stream.bytesToString();
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -340,7 +456,40 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                 TextButton(
                   child: const Text("Ver mi plan"),
                   onPressed: () {
-                    Navigator.of(context).pop(); // Cierra el dialog
+                    var response = jsonDecode(resp);
+
+                    if (response['tipo'] == 0) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ActivityDetail(
+                                  userToken: userToken!,
+                                  activityUuid: response["uuid"],
+                                )),
+                        (route) => false,
+                      );
+                    } else if (response['tipo'] == 1) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => PromoDetail(
+                                  promoUuid: response["uuid"],
+                                )),
+                        (route) => false,
+                      );
+                    } else {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => PrivatePlanDetail(
+                                  userToken: userToken!,
+                                  privatePlanUuid: response["uuid"],
+                                )),
+                        (route) => false,
+                      );
+                    }
+
+                    //  Navigator.of(context).pop(); // Cierra el dialog
                   },
                 ),
                 TextButton(
@@ -356,7 +505,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
         );
       } else {
         print('Error al crear plan: ${response.statusCode}');
-        print(await response.stream.bytesToString());
       }
     }
   }
@@ -372,7 +520,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     final response = await http
         .get(Uri.parse('${Config.serverIp}/search_users/?query=$query'));
 
-    print(response.statusCode);
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body);
       final List<UserProfile> results =
@@ -430,23 +577,36 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  SizedBox(height: 30),
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Crea tu', style: TextStyle(fontSize: 60)),
+                    child: Text('Creá tu',
+                        style: TextStyle(
+                            fontSize: 60,
+                            fontWeight: FontWeight.w600,
+                            height: 0.8)),
                   ),
                   const Align(
                     alignment: Alignment.centerRight,
-                    child: Text('evento local', style: TextStyle(fontSize: 60)),
+                    child: Text('eVento lOcal',
+                        style: TextStyle(
+                            fontSize: 60,
+                            fontWeight: FontWeight.w600,
+                            height: 0.8)),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                   Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Plan'),
+                            const Text(
+                              'Plan',
+                              style: TextStyle(fontSize: 20),
+                            ),
                             Radio<PlanType>(
                               value: PlanType.plan,
                               groupValue: _selectedPlanType,
@@ -459,7 +619,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 });
                               },
                             ),
-                            const Text('Promo'),
+                            const Text(
+                              'Promo',
+                              style: TextStyle(fontSize: 20),
+                            ),
                             Radio<PlanType>(
                               value: PlanType.promo,
                               groupValue: _selectedPlanType,
@@ -469,10 +632,14 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                   _selectedPlan = false;
                                   _selectedPrivatePlan = false;
                                   _selectedPromo = true;
+                                  _selectedGratisOption = true;
                                 });
                               },
                             ),
-                            const Text('Plan privado'),
+                            const Text(
+                              'Plan privado',
+                              style: TextStyle(fontSize: 20),
+                            ),
                             Radio<PlanType>(
                               value: PlanType.private,
                               groupValue: _selectedPlanType,
@@ -482,18 +649,34 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                   _selectedPlan = false;
                                   _selectedPromo = false;
                                   _selectedPrivatePlan = true;
+                                  _selectedGratisOption = true;
+                                  _selectedReservaOption = false;
+                                  _selectedEntradasOption = null;
                                 });
                               },
                             ),
                           ],
                         ),
-
+                        SizedBox(height: 10),
                         //TÍTULO DEL EVENTO
                         TextFormField(
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
                           controller: _titleController,
                           decoration: InputDecoration(
                             hintText: 'Título',
-                            border: const OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 1.5), // borde normal
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 3), // borde al enfocar
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -505,10 +688,24 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         ),
                         SizedBox(height: 10),
                         TextFormField(
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
                           controller: _shortDescriptionController,
                           decoration: InputDecoration(
-                              hintText: 'Pequeña descripción',
-                              border: const OutlineInputBorder()),
+                            hintText: 'Pequeña descripción',
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 1.5), // borde normal
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 3), // borde al enfocar
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                           maxLines: 1,
                         ),
                         SizedBox(
@@ -517,9 +714,22 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         //DESCRIPCIÓN DEL EVENTO
                         TextFormField(
                           controller: _descriptionController,
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
                             hintText: 'Descripción',
-                            border: const OutlineInputBorder(),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 1.5), // borde normal
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 3), // borde al enfocar
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -531,37 +741,40 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           maxLines: null,
                         ),
                         SizedBox(height: 10),
-                        Row(
-                          children: [
-                            Text(
-                              'Es gratis?      ',
-                            ),
-                            const Text('Sí'),
-                            Radio<bool>(
-                              value: true,
-                              groupValue: _selectedGratisOption,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _selectedGratisOption = value;
-                                  _showGratisError =
-                                      false; // Quita el error si selecciona
-                                });
-                              },
-                            ),
-                            const Text('No'),
-                            Radio<bool>(
-                              value: false,
-                              groupValue: _selectedGratisOption,
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  _selectedGratisOption = value;
-                                  _showGratisError =
-                                      false; // Quita el error si selecciona
-                                });
-                              },
-                            ),
-                          ],
-                        ),
+                        if (_selectedPlanType == PlanType.plan)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Es gratis?      ',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w500),
+                              ),
+                              const Text(
+                                'Sí',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w400),
+                              ),
+                              Radio<bool>(
+                                  value: true,
+                                  groupValue: _selectedGratisOption,
+                                  // ignore: deprecated_member_use
+                                  onChanged: (bool? value) {
+                                    handleEsGratisChange(value);
+                                  }),
+                              const Text(
+                                'No',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w400),
+                              ),
+                              Radio<bool>(
+                                  value: false,
+                                  groupValue: _selectedGratisOption,
+                                  onChanged: (bool? value) {
+                                    handleEsGratisChange(value);
+                                  }),
+                            ],
+                          ),
                         if (_showGratisError) //mostrar error si valides i no hi ha valor seleccionat
                           Padding(
                             padding: EdgeInsets.only(top: 4),
@@ -570,27 +783,96 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               style: TextStyle(color: Colors.red, fontSize: 12),
                             ),
                           ),
-                        if (_selectedGratisOption == false) ...[
-                          TextFormField(
-                            controller: _priceController,
-                            decoration: InputDecoration(
-                              hintText: 'Precio',
-                              border: const OutlineInputBorder(),
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
+                        if (_selectedGratisOption == true &&
+                            _selectedPlanType != PlanType.private) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Se necesita reserva?      ',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w500),
+                              ),
+                              const Text(
+                                'Sí',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w400),
+                              ),
+                              Radio<bool>(
+                                value: true,
+                                groupValue: _selectedReservaOption,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    _selectedReservaOption = value;
+                                    _showReservaError =
+                                        false; // Quita el error si selecciona
+                                  });
+                                },
+                              ),
+                              const Text(
+                                'No',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w400),
+                              ),
+                              Radio<bool>(
+                                value: false,
+                                groupValue: _selectedReservaOption,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    _selectedReservaOption = value;
+                                    _showReservaError =
+                                        false; // Quita el error si selecciona
+                                  });
+                                },
+                              ),
                             ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Por favor ingresa el precio';
-                              }
-                              final int? price = int.tryParse(value);
-                              if (price == null) {
-                                return 'Ingresa un número válido';
-                              }
-                            },
                           ),
+                        ],
+
+                        if (_selectedGratisOption == false) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Vender entradas con GoLocal?   ',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w500),
+                              ),
+                              const Text(
+                                'Sí',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w400),
+                              ),
+                              Radio<bool>(
+                                value: true,
+                                groupValue: _selectedEntradasOption,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    _selectedEntradasOption = value;
+                                    _showEntradasError =
+                                        false; // Quita el error si selecciona
+                                  });
+                                },
+                              ),
+                              const Text(
+                                'No',
+                                style: TextStyle(
+                                    fontSize: 20, fontWeight: FontWeight.w400),
+                              ),
+                              Radio<bool>(
+                                value: false,
+                                groupValue: _selectedEntradasOption,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    _selectedEntradasOption = value;
+                                    _showEntradasError =
+                                        false; // Quita el error si selecciona
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
                           /*TextFormField(
                             controller: _urlEntradas,
                             keyboardType: TextInputType.url,
@@ -611,37 +893,84 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                             },
                           )*/
                         ],
-                        /*TextFormField(
-                          controller: _urlInstagram,
-                          keyboardType: TextInputType.url,
-                          decoration: const InputDecoration(
-                            hintText: 'Link al post ',
-                            border: const OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value != null && value.isNotEmpty) {
-                              final uri = Uri.tryParse(value);
-                              if (uri == null ||
-                                  !uri.isAbsolute ||
-                                  uri.scheme.isEmpty) {
-                                return 'URL inválida';
+                        if (_selectedEntradasOption == false) ...[
+                          TextFormField(
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.w500),
+                            controller: _urlEntradas,
+                            decoration: InputDecoration(
+                              hintText: 'Link a la ticketera',
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Colors.black,
+                                    width: 1.5), // borde normal
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                    color: Colors.black,
+                                    width: 3), // borde al enfocar
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Por favor ingresa la URL de la ticketera';
                               }
-                            }
-                            return null;
-                          },
-                        ),*/
+                              return null;
+                            },
+                            maxLines: null,
+                          ),
+                          SizedBox(height: 20)
+                        ],
+
+                        if (_selectedEntradasOption == true) ...[
+                          EntradasForm(
+                            onEntradasChanged: (entradas) {
+                              setState(() {
+                                entradasGuardadas =
+                                    entradas; // actualizamos lista en el padre
+                              });
+                            },
+                          ),
+                          SizedBox(height: 20)
+                        ],
+                        if (_selectedReservaOption == true) ...[
+                          ReservasForm(
+                            onReservasChanged: (reservas) {
+                              setState(() {
+                                reservasGuardadas = reservas;
+                              }); // actualizamos lista en el padre
+                            },
+                          ),
+                          SizedBox(height: 20)
+                        ],
+
                         TextFormField(
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
                           controller: _placeController,
                           decoration: InputDecoration(
-                            labelText: 'Lugar',
-                            border: const OutlineInputBorder(),
+                            hintText: 'Lugar',
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 1.5), // borde normal
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                  color: Colors.black,
+                                  width: 3), // borde al enfocar
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                           onChanged: (value) {
                             _getPlaceSuggestions(value);
                           },
-                          validator: (value) => _selectedPlaceId == null
+                          /*    validator: (value) => _selectedPlaceId == null
                               ? 'Elegí un lugar válido'
-                              : null,
+                              : null,*/
                         ),
 
                         // ✅ Lista desplegable de sugerencias
@@ -671,42 +1000,52 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         Row(
                           mainAxisAlignment: _selectedImage != null
                               ? MainAxisAlignment.spaceBetween
-                              : MainAxisAlignment.start,
+                              : MainAxisAlignment.center,
                           children: [
                             _selectedImage != null
                                 ? Image.file(_selectedImage!, height: 150)
                                 : const SizedBox.shrink(),
-                            ElevatedButton(
-                              onPressed: _pickImage,
-                              child: _selectedImage == null
-                                  ? const Text("Seleccionar imagen")
-                                  : const Text('Cambiar de imagen'),
+                            SizedBox(
+                              width: 200,
+                              height: 60,
+                              child: ElevatedButton(
+                                style: ButtonStyle(),
+                                onPressed: _pickImage,
+                                child: _selectedImage == null
+                                    ? const Text("Seleccionar imagen")
+                                    : const Text('Cambiar de imagen'),
+                              ),
                             ),
                           ],
                         ),
                         SizedBox(height: 10),
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: _selectedDateTime == null
+                              ? MainAxisAlignment.center
+                              : MainAxisAlignment.spaceBetween,
                           children: [
-                            TextButton(
-                                style: ButtonStyle(
-                                  backgroundColor:
-                                      MaterialStateProperty.resolveWith<Color>(
-                                          (states) {
-                                    if (_selectedDateTime == null) {
-                                      return Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withOpacity(0.5);
-                                    }
-                                    return Colors
-                                        .transparent; // fondo normal sin selección
-                                  }),
-                                ),
-                                onPressed: pickStartDateTime,
-                                child: Text(_selectedDateTime == null
-                                    ? 'Seleccionar fecha y hora'
-                                    : formattedStartDate))
+                            SizedBox(
+                              width: 200,
+                              height: 60,
+                              child: TextButton(
+                                  style: ButtonStyle(
+                                    backgroundColor: MaterialStateProperty
+                                        .resolveWith<Color>((states) {
+                                      if (_selectedDateTime == null) {
+                                        return Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withOpacity(0.5);
+                                      }
+                                      return Colors
+                                          .transparent; // fondo normal sin selección
+                                    }),
+                                  ),
+                                  onPressed: pickStartDateTime,
+                                  child: Text(_selectedDateTime == null
+                                      ? 'Seleccionar fecha y hora'
+                                      : formattedStartDate)),
+                            )
                             // o formatear bonito con intl
                             ,
                             if (_showDateTimeError == true)
@@ -717,33 +1056,38 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               )
                           ],
                         ),
+                        SizedBox(height: 10),
                         if (_selectedPromo == true)
                           Row(
                             mainAxisAlignment: _selectedEndDateTime == null
-                                ? MainAxisAlignment.spaceBetween
+                                ? MainAxisAlignment.center
                                 : MainAxisAlignment.end,
                             children: [
-                              TextButton(
-                                  style: ButtonStyle(
-                                    backgroundColor: MaterialStateProperty
-                                        .resolveWith<Color>((states) {
-                                      if (_selectedEndDateTime == null) {
+                              SizedBox(
+                                height: 60,
+                                width: 200,
+                                child: TextButton(
+                                    style: ButtonStyle(
+                                      backgroundColor: MaterialStateProperty
+                                          .resolveWith<Color>((states) {
+                                        if (_selectedEndDateTime == null) {
+                                          return Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.8);
+                                        }
                                         return Theme.of(context)
                                             .colorScheme
-                                            .primary
-                                            .withOpacity(0.5);
-                                      }
-                                      return Theme.of(context)
-                                          .colorScheme
-                                          .secondary
-                                          .withOpacity(
-                                              0.2); // fondo normal sin selección
-                                    }),
-                                  ),
-                                  onPressed: pickEndDateTime,
-                                  child: Text(_selectedEndDateTime == null
-                                      ? 'Seleccionar hora de fin'
-                                      : 'Cambiar hora de fin'))
+                                            .secondary
+                                            .withOpacity(
+                                                0.2); // fondo normal sin selección
+                                      }),
+                                    ),
+                                    onPressed: pickEndDateTime,
+                                    child: Text(_selectedEndDateTime == null
+                                        ? 'Seleccionar hora de fin'
+                                        : 'Cambiar hora de fin')),
+                              )
                               // o formatear bonito con intl
                               ,
                               if (_showNoEndDateTimeError == true)
@@ -770,7 +1114,13 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 decoration: InputDecoration(
                                   labelText: 'Buscar usuario',
                                   suffixIcon: _isLoading
-                                      ? CircularProgressIndicator()
+                                      ? Center(
+                                          child: Image.asset(
+                                            'assets/ojitos.gif',
+                                            width: 100,
+                                            height: 100,
+                                          ),
+                                        )
                                       : Icon(Icons.search),
                                 ),
                                 onChanged: _searchUsers,
@@ -786,7 +1136,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                     itemBuilder: (context, index) {
                                       final user = _searchResults[index];
                                       return Container(
-                                        color: Colors.red,
+                                        color: AppTheme.logo.withOpacity(0.6),
                                         child: ListTile(
                                             title: Text('@${user.username}'),
                                             trailing: Checkbox(
@@ -812,7 +1162,15 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               const SizedBox(height: 10),
                               if (_selectedUsersUuid.isNotEmpty)
                                 Container(
-                                  color: Colors.amber,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.logo,
+                                    border: Border.all(
+                                      color: Colors.black, // color del borde
+                                      width: 2, // grosor del borde
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                        10), // 🔹 bordes redondeados
+                                  ),
                                   constraints: BoxConstraints(
                                     maxHeight: 200,
                                   ),
@@ -839,8 +1197,19 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           ),
 
                         SizedBox(height: 30),
-                        ElevatedButton(
-                            onPressed: _submitForm, child: Text('Crea'))
+                        SizedBox(
+                          height: 80,
+                          width: MediaQuery.of(context).size.width,
+                          child: ElevatedButton(
+                              onPressed: _submitForm,
+                              child: Text(
+                                'Crea',
+                                style: TextStyle(
+                                    fontSize: 35,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black),
+                              )),
+                        )
                       ],
                     ),
                   )

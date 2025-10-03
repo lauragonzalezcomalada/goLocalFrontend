@@ -9,26 +9,23 @@ class PrivatePlanCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 200,
-      width: MediaQuery.of(context).size.width * 0.95,
-      child: Column(
-        children: [
-          Expanded(
-            child: Stack(children: [
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: 220),
+      child: Container(
+        width: MediaQuery.of(context).size.width * 0.95,
+        child: Column(
+          children: [
+            Stack(children: [
               ClipRRect(
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
                 child: Container(
+                  height: 110,
                   width: double.infinity,
                   child: privatePlan.imageUrl == null
-                      ? Container(
-                          color: Colors.blue, // Color fijo
-                          width: 200,
-                          height: 150,
-                        )
+                      ? Image.asset('assets/solocarita.png')
                       : Image.network(
                           privatePlan
                               .imageUrl!, // o usa NetworkImage con Image.network()
@@ -36,71 +33,56 @@ class PrivatePlanCard extends StatelessWidget {
                         ),
                 ),
               ),
-
-               if (privatePlan.gratis == true)
-                  Positioned(
-                    top:8,
-                    right:8,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color:
-                            Colors.white,
-                        border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              , // Color del borde
-                          width: 2.0, // Grosor del borde
-                        ),
-                        borderRadius:
-                            BorderRadius.circular(12),
-                      ),
-                      child: Text('GRATIS', style: TextStyle(fontSize: 12),),
-                    ),
-                  ),
             ]),
-          ),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary,
-                borderRadius:const  BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: 110),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(252, 110, 75, 0.966),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
                 ),
+                child: Center(
+                    child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      DateBox(date: privatePlan.dateTime),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              privatePlan.name,
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 25,
+                                  fontWeight: FontWeight.w700),
+                              softWrap: true,
+                              overflow: TextOverflow.visible,
+                            ),
+                            if (privatePlan.shortDesc != null) ...[
+                              Text(privatePlan.shortDesc!,
+                                  style: TextStyle(fontSize: 20)),
+                              SizedBox(
+                                height: 5,
+                              )
+                            ]
+                          ],
+                        ),
+                      )
+                    ],
+                  ),
+                )),
               ),
-              child: Center(
-                  child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    DateBox(date: privatePlan.dateTime),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(8.0, 0, 0, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(privatePlan.name,
-                              style:
-                                  TextStyle(color: Colors.white, fontSize: 20)),
-                          if (privatePlan.shortDesc != null)
-                            Text(privatePlan.shortDesc!, style: TextStyle(fontSize: 20)),
-                          Spacer(),
-                         
-                          
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              )),
-            ),
-          )
-        ],
+            )
+          ],
+        ),
       ),
     );
   }

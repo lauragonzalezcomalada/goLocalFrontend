@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'src/app.dart';
@@ -7,8 +8,11 @@ import 'src/settings/settings_service.dart';
 // Importar la segunda pantalla
 
 void main() async {
-  // Set up the SettingsController, which will glue user settings to multiple
+  // Set up the SettingsController, which w
+  //ill glue user settings to multiple
   // Flutter Widgets.
+  WidgetsFlutterBinding.ensureInitialized();
+
   final settingsController = SettingsController(SettingsService());
 
   // Load the user's preferred theme while the splash screen is displayed.

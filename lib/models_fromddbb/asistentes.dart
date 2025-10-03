@@ -1,12 +1,12 @@
-class Asistente {
+class Usuario {
   final String uuid;
   final String name;
   final String? asistenteImageUrl;
 
-  Asistente({required this.uuid, required this.name, this.asistenteImageUrl});
+  Usuario({required this.uuid, required this.name, this.asistenteImageUrl});
 
-  factory Asistente.fromJson(Map<String, dynamic> json) {
-    return Asistente(
+  factory Usuario.fromJson(Map<String, dynamic> json) {
+    return Usuario(
         uuid: json['uuid'],
         name: json['username'],
         asistenteImageUrl: json['image']);

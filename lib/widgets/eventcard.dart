@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:worldwildprova/screens/activitydetail_screen.dart';
+import 'package:worldwildprova/screens/promodetail_screen.dart';
+import 'package:worldwildprova/widgets/privatePlanDetail.dart';
 import 'package:worldwildprova/widgets/usages.dart';
 
 class EventCard extends StatelessWidget {
+  final String tipo;
   final String activityUuid;
   final String? imageUrl;
   final String activityTitle;
@@ -11,31 +14,48 @@ class EventCard extends StatelessWidget {
   final bool created_by_user;
   final String? userToken;
   final bool? tiene_tickets;
+  final bool? active;
 
   EventCard(
       {super.key,
+      required this.tipo,
       required this.activityUuid,
       this.imageUrl,
       required this.activityTitle,
       required this.activityDateTime,
       required this.created_by_user,
       this.userToken,
-      this.tiene_tickets});
+      this.tiene_tickets,
+      this.active});
 
   @override
   Widget build(BuildContext context) {
-    print('tienetickets: $tiene_tickets');
     return GestureDetector(
       onTap: () {
-        print('tapèd');
-        print(userToken);
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => ActivityDetail(
-                      activityUuid: activityUuid,
-                      userToken: userToken!,
-                    )));
+        if (tipo == 'activity') {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => ActivityDetail(
+                        activityUuid: activityUuid,
+                        userToken: userToken!,
+                      )));
+        } else if (tipo == 'promo') {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => PromoDetail(
+                        promoUuid: activityUuid,
+                      )));
+        } else {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => PrivatePlanDetail(
+                        privatePlanUuid: activityUuid,
+                        userToken: userToken!,
+                      )));
+        }
       },
       child: SizedBox(
         height: 300,
@@ -49,12 +69,15 @@ class EventCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(15),
               child: Stack(
                 children: [
-                  Image.network(
-                    imageUrl == null
-                        ? 'https://camarasal.com/wp-content/uploads/2020/08/default-image-5-1.jpg'
-                        : imageUrl!,
-                    fit: BoxFit.cover,
-                    height: MediaQuery.of(context).size.height * 0.5,
+                  Center(
+                    child: imageUrl == null
+                        ? Image.asset('assets/solocarita.png',
+                            fit: BoxFit.cover)
+                        : Image.network(
+                            imageUrl!,
+                            fit: BoxFit.cover,
+                            height: MediaQuery.of(context).size.height * 0.5,
+                          ),
                   ),
                   if (isPast(activityDateTime))
                     Positioned(
@@ -109,8 +132,27 @@ class EventCard extends StatelessWidget {
                         ),
                         child: Text(
                           formatDate(activityDateTime),
+                          style: TextStyle(fontSize: 18),
                         ),
                       )),
+                  if (active != null)
+                    Positioned(
+                        top: 40,
+                        left: 8,
+                        child: Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2), // espacio interno
+                            decoration: BoxDecoration(
+                              // color de fondo
+                              //border:
+                              //  Border.all(color: Colors.blue, width: 1.5), // borde
+                              borderRadius: BorderRadius.circular(
+                                  10), // bordes redondeados
+                            ),
+                            child: Icon(
+                              Icons.visibility,
+                              color: active == true ? Colors.green : Colors.red,
+                            ))),
                   Positioned(
                       bottom: 5,
                       right: 8,
@@ -118,11 +160,11 @@ class EventCard extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: Text(
-                          activityTitle,
+                          activityTitle.toUpperCase(),
                           softWrap: true,
                           style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
                               color: Colors.white),
                         ),
                       )),

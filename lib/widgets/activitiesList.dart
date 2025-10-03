@@ -31,7 +31,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
 
   List<Activity> activities = [];
 
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   List<Activity> _filteredActivities = [];
 
   List<Tag> tags = [];
@@ -78,7 +78,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
         final matchesName = item.name.toLowerCase().contains(query);
 
         final matchesGratis = (gratis == null) || (item.gratis == gratis);
-        //no hi ha tags
+
         if (selectedTagIds.isEmpty) {
           return matchesName && matchesGratis;
         }
@@ -102,12 +102,12 @@ class _ActivitiesListState extends State<ActivitiesList> {
   // Función para hacer la solicitud GET
   Future<void> fetchActivities() async {
     try {
-      final response = await http.get(
-          Uri.parse('${Config.serverIp}/activities/?place_uuid=$placeUuid'));
-
+      final response =
+          await http.get(Uri.parse('${Config.serverIp}/activities'));
+      print('status code activities ${response.statusCode}');
+      print('body de activities ${response.body}');
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
-        print(data);
         setState(() {
           activities = data
               .map((activityJson) => Activity.fromJson(activityJson, false))
@@ -124,10 +124,32 @@ class _ActivitiesListState extends State<ActivitiesList> {
     }
   }
 
+  Future<void> updateViews(String uuid) async {
+    try {
+      final response = await http.get(Uri.parse(
+          '${Config.serverIp}/register_view/?activity=True&uuid=$uuid'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        /* setState(() {
+          activities = data
+              .map((activityJson) => Activity.fromJson(activityJson, false))
+              .toList();
+          _filteredActivities = activities;
+        });*/
+      } else {
+        // Si la respuesta es un error, muestra un mensaje
+        throw Exception('Failed to load places');
+      }
+    } catch (e) {
+      // Si ocurre un error en la solicitud
+      print('Error: $e');
+    }
+  }
+
   Future<void> fetchTags() async {
     try {
       final response = await http.get(Uri.parse('${Config.serverIp}/tags/'));
-
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
         setState(() {
@@ -145,14 +167,13 @@ class _ActivitiesListState extends State<ActivitiesList> {
     final authService = Provider.of<AuthService>(context, listen: false);
     final isLoggedIn = await authService.isLoggedIn();
 
-    print('is logged in');
-    print(isLoggedIn);
     if (isLoggedIn == false) {
       Future.microtask(() => showLoginAlert(context,
           'Regístrate para poder tener más información de los planes!'));
       return;
     }
     userToken = await authService.getAccessToken();
+    updateViews(activity_uuid);
 
     Navigator.push(
         context,
@@ -167,6 +188,12 @@ class _ActivitiesListState extends State<ActivitiesList> {
   Widget build(BuildContext context) {
     return activities.isEmpty
         ? Center(
+            child: Image.asset(
+              'assets/ojitos.gif',
+              width: 150,
+              height: 150,
+            ),
+          ) /*Center(
             child: Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 150, horizontal: 50),
@@ -188,7 +215,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
                       child: const Text('Crea un plan!'),
                     )
                   ],
-                )))
+                )))*/
         : Column(
             children: [
               // 🔍 Buscador
@@ -227,7 +254,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
                               ? Theme.of(context)
                                   .colorScheme
                                   .primary
-                                  .withOpacity(0.7)
+                                  .withOpacity(0.5)
                               : Colors.white,
                           minimumSize: const Size(
                               0, 0), // para evitar tamaño mínimo fijo

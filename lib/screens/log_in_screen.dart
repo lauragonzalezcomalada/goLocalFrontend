@@ -62,7 +62,13 @@ class _LogInScreenState extends State<LogInScreen> {
           builder: ((context, snapshot) {
             if (!snapshot.hasData) {
               //mentre carrega
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: Image.asset(
+                  'assets/ojitos.gif',
+                  width: 100,
+                  height: 100,
+                ),
+              );
             }
             final isLoggedIn = snapshot.data!;
             return isLoggedIn
@@ -115,22 +121,31 @@ class _LogInScreenState extends State<LogInScreen> {
           ? BottomNavigationBar(
               currentIndex: 0, // mismo control
               onTap: (index) {
-                Navigator.pushReplacement(
+                Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MainScaffold(
-                      initialIndex: index,
-                    ),
+                    builder: (context) => MainScaffold(initialIndex: index),
                   ),
+                  (route) => false,
                 );
               },
-              items: const [
+              items: [
+                const BottomNavigationBarItem(
+                    icon: Icon(Icons.place, size: 35), label: 'Lugares'),
                 BottomNavigationBarItem(
-                    icon: Icon(Icons.place), label: 'Lugares'),
+                    icon: Image.asset(
+                      'assets/pincel3.png',
+                      height: 24, // ajustá el tamaño
+                      width: 24,
+                    ),
+                    label: 'Crear Plan'),
                 BottomNavigationBarItem(
-                    icon: Icon(Icons.brush), label: 'Crear plan'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.person), label: 'Perfil'),
+                    icon: Image.asset(
+                      'assets/solocarita.png',
+                      height: 24, // ajustá el tamaño
+                      width: 24,
+                    ),
+                    label: 'Perfil'),
               ],
             )
           : null,
