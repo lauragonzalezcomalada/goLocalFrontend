@@ -1,23 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:worldwildprova/models_fromddbb/userprofile.dart';
 
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:worldwildprova/config.dart';
 import 'dart:convert';
 
-import 'package:worldwildprova/models_fromddbb/userprofile.dart'; // Necesario para convertir JSON a objetos
-
 class AuthService with ChangeNotifier {
-  //URL per a tenir el token d'autentificació
-  static const String _apiUrl = 'http://192.168.1.38:8000/api/';
-  // Instancia de FlutterSecureStorage per guardar el token de forma segura
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   String? _accessToken;
   String? _refreshToken;
-  DateTime?
-      _accessTokenExpiry; // el temps d'expiració de l'access token, per evitar errors d'401 Unauthorised
+  DateTime? _accessTokenExpiry;
 
   String? get accessToken => _accessToken;
   String? get refreshToken => _refreshToken;
@@ -39,10 +34,8 @@ class AuthService with ChangeNotifier {
 
       _accessTokenExpiry = JwtDecoder.getExpirationDate(_accessToken!);
 
-      // Guardar los tokens de forma segura
       await _saveTokens(_accessToken!, _refreshToken!, _accessTokenExpiry!);
       await getUserProfile(_accessToken);
-      // Notificar a los oyentes (por ejemplo, la UI)
       notifyListeners();
 
       return true;

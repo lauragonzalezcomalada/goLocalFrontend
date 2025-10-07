@@ -9,6 +9,7 @@ import 'package:worldwildprova/models_fromddbb/activity.dart';
 import 'package:worldwildprova/models_fromddbb/promo.dart';
 import 'package:worldwildprova/models_fromddbb/tagChip.dart';
 import 'package:worldwildprova/screens/second_screen.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/eventcard.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'package:provider/provider.dart';
@@ -318,166 +319,181 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     List<int> selectedTags =
                         user.tags!.map((tag) => tag.id).toList();
                     return Drawer(
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.zero,
-                        ),
-                        child: ListView(
-                          children: [
-                            TextButton(
-                                style: TextButton.styleFrom(
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.zero,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showEditDescription =
-                                        !_showEditDescription;
-                                  });
-                                },
-                                child: const Text('EDITAR MI DESCRIPCIÓN')),
-                            if (_showEditDescription == true)
-                              Column(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        16.0, 0, 16.0, 0),
-                                    child: TextField(
-                                        controller:
-                                            _descriptionChangeController,
-                                        minLines: 3,
-                                        maxLines: 6
-
-                                        // decoration: InputDecoration(hintText: user.bio),
-                                        ),
-                                  ),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton(
-                                      child: const Text('Confirmar'),
-                                      onPressed: () {
-                                        submitPartialUpdate(
-                                            snapshot.data!.uuid,
-                                            'description',
-                                            _descriptionChangeController.text);
-
-                                        _showEditDescription = false;
-
-                                        // Navigator.of(context).pop();
-                                      },
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              TextButton(
+                                  style: TextButton.styleFrom(
+                                    shape: const RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.zero,
                                     ),
                                   ),
-                                ],
-                              ),
-                            TextButton(
-                                style: TextButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.zero,
-                                  ),
-                                ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showEditTags = !_showEditTags;
-                                  });
-                                },
-                                child: Text('EDITAR MIS TAGS')),
-                            if (_showEditTags == true)
-                              Column(
-                                children: [
-                                  TagSelector(
-                                    selectedTags: selectedTags,
-                                    onChanged: (newTags) {
-                                      selectedTags = newTags;
-                                    },
-                                  ),
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: TextButton(
-                                      child: Text('Confirmar'),
-                                      onPressed: () {
-                                        submitPartialUpdate(snapshot.data!.uuid,
-                                            'tags', selectedTags.toString());
+                                  onPressed: () {
+                                    setState(() {
+                                      _showEditDescription =
+                                          !_showEditDescription;
+                                    });
+                                  },
+                                  child: const Text('EDITAR MI DESCRIPCIÓN',
+                                      style: TextStyle(fontSize: 28))),
+                              if (_showEditDescription == true)
+                                Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          16.0, 0, 16.0, 0),
+                                      child: TextField(
+                                          controller:
+                                              _descriptionChangeController,
+                                          minLines: 3,
+                                          maxLines: 6
 
-                                        _showEditTags = false;
-
-                                        // Navigator.of(context).pop();
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            /*TextButton(
-                              onPressed: () {
-                                if (user.unreadMessages!.length > 0) {
-                                  setState(() {
-                                    _showMessages = !_showMessages;
-                                  });
-                                } else {
-                                  print('no hay mensajes');
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          'No tienes mensajes por ahora...'),
-                                      duration: Duration(
-                                          seconds:
-                                              2), // tiempo que dura visible
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Stack(
-                                clipBehavior: Clip
-                                    .none, // para que el badge pueda "salirse"
-                                children: [
-                                  const Text('MENSAJES'),
-                                  if (user.unreadMessages!.length > 0)
-                                    Positioned(
-                                      right:
-                                          -20, // mueve el badge hacia afuera a la derecha
-                                      top: -10, // mueve el badge hacia arriba
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.red,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        constraints: const BoxConstraints(
-                                          minWidth: 20,
-                                          minHeight: 20,
-                                        ),
-                                        child: Text(
-                                          '${user.unreadMessages?.length}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 12,
+                                          // decoration: InputDecoration(hintText: user.bio),
                                           ),
-                                          textAlign: TextAlign.center,
-                                        ),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        child: const Text('Confirmar'),
+                                        onPressed: () {
+                                          submitPartialUpdate(
+                                              snapshot.data!.uuid,
+                                              'description',
+                                              _descriptionChangeController
+                                                  .text);
+
+                                          _showEditDescription = false;
+
+                                          // Navigator.of(context).pop();
+                                        },
                                       ),
                                     ),
-                                ],
-                              ),
-                            ),
-                            if (_showMessages == true)
-                              SizedBox(
-                                height: 200,
-                                child: ListView.builder(
-                                  itemCount: user.unreadMessages?.length ?? 0,
-                                  itemBuilder: (context, index) {
-                                    final message = user.unreadMessages![index];
-                                    return ListTile(
-                                      title: Text(message.message),
-                                    );
-                                  },
+                                  ],
                                 ),
-                              ),*/
-                            TextButton(
-                                onPressed: () {
-                                  authService.logout();
-                                },
-                                child: Text('CERRAR SESIÓN'))
-                          ],
-                        ));
+                              TextButton(
+                                  style: TextButton.styleFrom(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.zero,
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _showEditTags = !_showEditTags;
+                                    });
+                                  },
+                                  child: Text(
+                                    'EDITAR MIS TAGS',
+                                    style: TextStyle(fontSize: 28),
+                                  )),
+                              if (_showEditTags == true)
+                                Column(
+                                  children: [
+                                    TagSelector(
+                                      selectedTags: selectedTags,
+                                      onChanged: (newTags) {
+                                        selectedTags = newTags;
+                                      },
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: TextButton(
+                                        child: Text('Confirmar'),
+                                        onPressed: () {
+                                          submitPartialUpdate(
+                                              snapshot.data!.uuid,
+                                              'tags',
+                                              selectedTags.toString());
+
+                                          _showEditTags = false;
+
+                                          // Navigator.of(context).pop();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              /*TextButton(
+                                  onPressed: () {
+                                    if (user.unreadMessages!.length > 0) {
+                                      setState(() {
+                                        _showMessages = !_showMessages;
+                                      });
+                                    } else {
+                                      print('no hay mensajes');
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              'No tienes mensajes por ahora...'),
+                                          duration: Duration(
+                                              seconds:
+                                                  2), // tiempo que dura visible
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Stack(
+                                    clipBehavior: Clip
+                                        .none, // para que el badge pueda "salirse"
+                                    children: [
+                                      const Text('MENSAJES'),
+                                      if (user.unreadMessages!.length > 0)
+                                        Positioned(
+                                          right:
+                                              -20, // mueve el badge hacia afuera a la derecha
+                                          top: -10, // mueve el badge hacia arriba
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 20,
+                                              minHeight: 20,
+                                            ),
+                                            child: Text(
+                                              '${user.unreadMessages?.length}',
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                if (_showMessages == true)
+                                  SizedBox(
+                                    height: 200,
+                                    child: ListView.builder(
+                                      itemCount: user.unreadMessages?.length ?? 0,
+                                      itemBuilder: (context, index) {
+                                        final message = user.unreadMessages![index];
+                                        return ListTile(
+                                          title: Text(message.message),
+                                        );
+                                      },
+                                    ),
+                                  ),*/
+                              TextButton(
+                                  onPressed: () {
+                                    authService.logout();
+                                  },
+                                  child: Text(
+                                    'CERRAR SESIÓN',
+                                    style: TextStyle(fontSize: 28),
+                                  ))
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
                   }
                 },
               )
@@ -654,20 +670,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         SizedBox(height: 20),
                         if (userProfile.tags!.isNotEmpty && itsMe) ...[
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const Text(
-                                'Tus intereses',
+                              Text(
+                                'TUS INTERESES',
                                 style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.logo),
                               ),
-                              const SizedBox(
-                                  width: 8), // espacio entre texto y línea
+                              SizedBox(width: 8), // espacio entre texto y línea
                               Expanded(
                                 child: Divider(
-                                  color: Colors.black,
+                                  color: AppTheme.logo,
                                   thickness: 2,
                                 ),
                               ),
@@ -748,15 +765,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               const Text(
-                                'Eventos asistidos',
+                                'EVENTOS ASISTIDOS',
                                 style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.logo),
                               ),
                               const SizedBox(
                                   width: 8), // espacio entre texto y línea
                               Expanded(
                                 child: Divider(
-                                  color: Colors.black,
+                                  color: AppTheme.logo,
                                   thickness: 2,
                                 ),
                               ),
@@ -801,20 +820,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                         SizedBox(height: 20),
                         if (userProfile.eventosCreados!.isNotEmpty) ...[
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const Text(
-                                'Eventos creados',
+                              Text(
+                                'EVENTOS CREADOS',
                                 style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.bold),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppTheme.logo),
                               ),
-                              const SizedBox(
-                                  width: 8), // espacio entre texto y línea
+                              SizedBox(width: 8), // espacio entre texto y línea
                               Expanded(
                                 child: Divider(
-                                  color: Colors.black,
+                                  color: AppTheme.logo,
                                   thickness: 2,
                                 ),
                               ),
@@ -866,6 +886,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             }),
         bottomNavigationBar: widget.notFromMainScaffold == true
             ? BottomNavigationBar(
+                selectedLabelStyle: const TextStyle(fontSize: 16),
+                unselectedLabelStyle: const TextStyle(fontSize: 14),
                 currentIndex: 0, // mismo control
                 onTap: (index) {
                   Navigator.pushAndRemoveUntil(
@@ -877,8 +899,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
                 items: [
-                  const BottomNavigationBarItem(
-                      icon: Icon(Icons.place, size: 35), label: 'Lugares'),
+                  BottomNavigationBarItem(
+                      icon: Image.asset(
+                        'assets/explorar.png',
+                        height: 30, // ajustá el tamaño
+                        width: 30,
+                      ),
+                      label: 'Explorar'),
                   BottomNavigationBarItem(
                       icon: Image.asset(
                         'assets/pincel3.png',

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/mainscaffold.dart';
 
 String convertirFecha(String fechaInput) {
@@ -113,7 +114,7 @@ Widget sectionHeader(String label) {
       children: <Widget>[
         const Expanded(
           child: Divider(
-            color: Colors.black,
+            color: AppTheme.logo,
             thickness: 2,
           ),
         ),
@@ -121,7 +122,10 @@ Widget sectionHeader(String label) {
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Text(
             label.toUpperCase(),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            style: const TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 20,
+                color: AppTheme.logo),
           ),
         ),
       ],

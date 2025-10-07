@@ -12,6 +12,7 @@ import 'package:worldwildprova/models_fromddbb/activity.dart';
 import 'package:worldwildprova/models_fromddbb/tagChip.dart';
 import 'package:worldwildprova/screens/activitydetail_screen.dart';
 import 'package:worldwildprova/widgets/activitiesList.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/mainscaffold.dart';
 import 'package:worldwildprova/widgets/privatePlansList.dart';
 import 'package:worldwildprova/widgets/promoList.dart';
@@ -53,16 +54,37 @@ class _SecondScreenState extends State<SecondScreen>
     return Scaffold(
         appBar: AppBar(
           title: Text('Que hacer en ${widget.placeName}',
-              style: TextStyle(fontSize: 35)),
+              style: TextStyle(
+                  fontSize: 35,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.logo)),
           bottom: TabBar(
             labelStyle: const TextStyle(
               fontSize: 15, // 👈 Tamaño del texto seleccionado
             ),
             controller: _tabController,
             tabs: [
-              Tab(child: Center(child: Text('Planes'))),
-              Tab(child: Center(child: Text('Promos'))),
-              Tab(child: Center(child: Text('Privados')))
+              Tab(
+                  child: Center(
+                      child: Text('Planes',
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'BarlowCondensed')))),
+              Tab(
+                  child: Center(
+                      child: Text('Promos',
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'BarlowCondensed')))),
+              Tab(
+                  child: Center(
+                      child: Text('Privados',
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                              fontFamily: 'BarlowCondensed'))))
             ],
           ),
         ),
@@ -74,7 +96,9 @@ class _SecondScreenState extends State<SecondScreen>
         ]),
         bottomNavigationBar: widget.fromMainScaffold == false
             ? BottomNavigationBar(
-                currentIndex: 0, // mismo control
+                selectedLabelStyle: const TextStyle(fontSize: 16),
+                unselectedLabelStyle: const TextStyle(fontSize: 14),
+                currentIndex: 0,
                 onTap: (index) {
                   Navigator.pushAndRemoveUntil(
                     context,
@@ -85,8 +109,13 @@ class _SecondScreenState extends State<SecondScreen>
                   );
                 },
                 items: [
-                  const BottomNavigationBarItem(
-                      icon: Icon(Icons.place, size: 35), label: 'Lugares'),
+                  BottomNavigationBarItem(
+                      icon: Image.asset(
+                        'assets/explorar.png',
+                        height: 30, // ajustá el tamaño
+                        width: 30,
+                      ),
+                      label: 'Explorar'),
                   BottomNavigationBarItem(
                       icon: Image.asset(
                         'assets/pincel3.png',

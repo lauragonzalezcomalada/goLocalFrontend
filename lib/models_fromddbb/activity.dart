@@ -33,6 +33,7 @@ class Activity extends ListableItem implements Evento {
   late bool? going;
   final double? lat;
   final double? long;
+  final String? direccion;
   final bool? conReserva;
   final List<Usuario>? asistentes;
   final List<Entrada>? entradas;
@@ -57,6 +58,7 @@ class Activity extends ListableItem implements Evento {
       this.going,
       this.lat,
       this.long,
+      this.direccion,
       this.price,
       this.conReserva,
       this.entradas,
@@ -114,6 +116,7 @@ class Activity extends ListableItem implements Evento {
         going: json['user_isgoing'],
         lat: json['lat'],
         long: json['long'],
+        direccion: json['direccion'],
         price: json['price'],
         conReserva: json['reserva_necesaria'],
         asistentes: (json['asistentes'] as List)

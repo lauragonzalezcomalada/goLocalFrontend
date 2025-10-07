@@ -26,7 +26,7 @@ class PrivatePlan extends ListableItem implements Evento {
   final String? placeName;
   final double? lat;
   final double? long;
-
+  final String? direccion;
   final bool? going;
   final bool? conReserva;
   final bool? gratis;
@@ -44,6 +44,7 @@ class PrivatePlan extends ListableItem implements Evento {
       this.placeName,
       this.lat,
       this.long,
+      this.direccion,
       this.imageUrl,
       this.created_by_user,
       this.going,
@@ -66,6 +67,7 @@ class PrivatePlan extends ListableItem implements Evento {
         desc: json['desc'],
         lat: json['lat'],
         long: json['long'],
+        direccion: json['direccion'],
         going: json['user_isgoing'],
         gratis: json['gratis'],
         price: json['price'],

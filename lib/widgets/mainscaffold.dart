@@ -61,6 +61,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
+        selectedLabelStyle: const TextStyle(fontSize: 16),
+        unselectedLabelStyle: const TextStyle(fontSize: 14),
         currentIndex: _currentIndex,
         onTap: (index) => setState(() {
           _currentIndex = index;

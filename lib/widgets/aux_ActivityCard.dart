@@ -85,9 +85,9 @@ class AuxActivityCard extends StatelessWidget {
                               activity.name,
                               style: TextStyle(
                                   fontSize: 25, fontWeight: FontWeight.w700),
-                              softWrap: true, // 👈 permite salto de línea
+                              softWrap: true,
                               overflow: TextOverflow.visible,
-                            ), // 👈 no corta el texto),
+                            ),
                             if (activity.shortDesc != null) ...[
                               Text(activity.shortDesc!,
                                   style: TextStyle(fontSize: 20)),

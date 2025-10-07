@@ -32,6 +32,7 @@ class Promo extends ListableItem implements Evento {
   final List<Usuario>? asistentes;
   final double? lat;
   final double? long;
+  final String? direccion;
   final List<Reserva>? reservas_forms;
 
   Promo(
@@ -51,6 +52,7 @@ class Promo extends ListableItem implements Evento {
       this.created_by_user,
       this.lat,
       this.long,
+      this.direccion,
       this.conReserva,
       this.tiene_tickets,
       this.active,
@@ -58,7 +60,6 @@ class Promo extends ListableItem implements Evento {
 
   // FOR LISTING
   factory Promo.fromJson(Map<String, dynamic> json, bool fromUserProfile) {
-    print('jsonnnnn $json');
     // Manejo seguro de tags
     List<Tag>? tagsList;
     if (json['tag_detail'] != null) {
@@ -109,7 +110,6 @@ class Promo extends ListableItem implements Evento {
 
   // Método para convertir el JSON recibido en un objeto Promo para dar los detalles
   factory Promo.fromServerJson(Map<String, dynamic> json) {
-    print('json de promo: ${json['asistentes']}');
     // Manejar tags
     List<Tag> tagsList = [];
     if (json['tag_detail'] != null) {
@@ -144,6 +144,7 @@ class Promo extends ListableItem implements Evento {
       created_by_user: json['created_by_user'] ?? false,
       lat: json['lat'],
       long: json['long'],
+      direccion: json['direccion'],
       tiene_tickets: json['tiene_ticket'] ?? false,
       active: json['active'],
       conReserva: json['reserva_necesaria'],

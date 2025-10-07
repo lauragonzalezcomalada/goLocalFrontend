@@ -119,6 +119,8 @@ class _LogInScreenState extends State<LogInScreen> {
           })),
       bottomNavigationBar: widget.comingFromOnboarding == true
           ? BottomNavigationBar(
+              selectedLabelStyle: const TextStyle(fontSize: 16),
+              unselectedLabelStyle: const TextStyle(fontSize: 14),
               currentIndex: 0, // mismo control
               onTap: (index) {
                 Navigator.pushAndRemoveUntil(
@@ -130,8 +132,13 @@ class _LogInScreenState extends State<LogInScreen> {
                 );
               },
               items: [
-                const BottomNavigationBarItem(
-                    icon: Icon(Icons.place, size: 35), label: 'Lugares'),
+                BottomNavigationBarItem(
+                    icon: Image.asset(
+                      'assets/explorar.png',
+                      height: 30, // ajustá el tamaño
+                      width: 30,
+                    ),
+                    label: 'Explorar'),
                 BottomNavigationBarItem(
                     icon: Image.asset(
                       'assets/pincel3.png',

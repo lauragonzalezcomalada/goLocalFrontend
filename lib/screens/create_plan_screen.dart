@@ -7,10 +7,12 @@ import 'package:intl/intl.dart'; // per les dates, per formatejarles
 import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/models_fromddbb/entrada.dart';
 import 'package:worldwildprova/models_fromddbb/reserva.dart';
+import 'package:worldwildprova/models_fromddbb/tag.dart';
 import 'package:worldwildprova/models_fromddbb/userprofile.dart';
 import 'package:worldwildprova/screens/activitydetail_screen.dart';
 import 'package:worldwildprova/screens/promodetail_screen.dart';
 import 'package:worldwildprova/widgets/appTheme.dart';
+import 'package:worldwildprova/widgets/dateBox.dart';
 import 'package:worldwildprova/widgets/entradasForm.dart';
 import 'package:worldwildprova/widgets/privatePlanDetail.dart';
 import 'package:worldwildprova/widgets/reservasForm.dart';
@@ -57,6 +59,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
         });
       }
     });
+    _titleController.addListener(() => setState(() {}));
+    _shortDescriptionController.addListener(() => setState(() {}));
+    fetchAllTags();
   }
 
   Future<void> _checkLoggedStatus() async {
@@ -68,8 +73,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     userToken = await authService.getAccessToken();
   }
 
-  final String googleApiKey = 'AIzaSyBM51UAqo5azY443B3CxM8VMv-IIRLIOR0';
-
   final _formKey = GlobalKey<FormState>();
 
   // els controladors
@@ -80,7 +83,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   //final TextEditingController _priceController = TextEditingController();
   final TextEditingController _urlEntradas = TextEditingController();
   final TextEditingController _placeController = TextEditingController();
-  List<int> _selectedTags = []; // Aquí almacenamos los tags seleccionados
+  List<int> _selectedTags = [];
+  List<Tag> _allTags = [];
   DateTime? _selectedDateTime;
   DateTime? _selectedEndDateTime;
   List<Entrada> entradasGuardadas = [];
@@ -98,6 +102,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   double? _latitude;
   double? _longitude;
   String? direccion;
+
+  bool _showTagSelector = false;
 
   // Variable para controlar de es Gratis la opción seleccionada y el error
   bool? _selectedGratisOption;
@@ -131,6 +137,17 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     if (pickedFile != null) {
       setState(() {
         _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> fetchAllTags() async {
+    final response = await http.get(Uri.parse('${Config.serverIp}/tags/'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      setState(() {
+        _allTags = data.map((tagJson) => Tag.fromJson(tagJson)).toList();
       });
     }
   }
@@ -176,7 +193,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   //Obtener sugerencias desde Places Autocomplete
   Future<void> _getPlaceSuggestions(String input) async {
     final url =
-        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=$googleApiKey';
+        'https://maps.googleapis.com/maps/api/place/autocomplete/json?input=$input&key=${Config().googleApiKey}&language=es';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -196,9 +213,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   //Obtener coordenadas con el place_id
   Future<void> _getCoordinatesFromPlaceId(String placeId) async {
     final url =
-        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=$googleApiKey';
+        'https://maps.googleapis.com/maps/api/place/details/json?place_id=$placeId&key=${Config().googleApiKey}&language=es';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
+      print('response del get coordinates: ${response.body}');
       final data = jsonDecode(response.body);
       final location = data['result']['geometry']['location'];
       _latitude = location['lat'];
@@ -449,6 +467,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
         var resp = await response.stream.bytesToString();
         showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
               content: const Text("¡Creáste tu plan 🎉!"),
@@ -457,8 +476,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                   child: const Text("Ver mi plan"),
                   onPressed: () {
                     var response = jsonDecode(resp);
-
+                    print('response del crear plan: ${response["uuid"]}');
+                    print('user token al crear plan: ${userToken!}');
                     if (response['tipo'] == 0) {
+                      print('tipo 0');
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -469,15 +490,18 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         (route) => false,
                       );
                     } else if (response['tipo'] == 1) {
+                      print('tupo 1');
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
                             builder: (context) => PromoDetail(
                                   promoUuid: response["uuid"],
+                                  userToken: userToken!,
                                 )),
                         (route) => false,
                       );
                     } else {
+                      print('tipo 2');
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -968,9 +992,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           onChanged: (value) {
                             _getPlaceSuggestions(value);
                           },
-                          /*    validator: (value) => _selectedPlaceId == null
-                              ? 'Elegí un lugar válido'
-                              : null,*/
                         ),
 
                         // ✅ Lista desplegable de sugerencias
@@ -985,17 +1006,52 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                             )),
                         SizedBox(height: 10),
                         if (_selectedPrivatePlan == false)
+                          Center(
+                            child: TextButton(
+                              style: ButtonStyle(
+                                shape: MaterialStateProperty.all<
+                                    RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18.0),
+                                    side: BorderSide(
+                                        color: _showTagSelector == false
+                                            ? AppTheme.logo
+                                            : AppTheme.cardColor,
+                                        width: 2),
+                                  ),
+                                ),
+                                backgroundColor: _showTagSelector == false
+                                    ? WidgetStateProperty.all(
+                                        Colors.transparent)
+                                    : WidgetStateProperty.all(
+                                        AppTheme.cardColor.withOpacity(0.5)),
+                              ),
+                              child: Text(
+                                ' Seleccionar etiquetas ',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w800, fontSize: 20),
+                              ),
+                              onPressed: () {
+                                _showTagSelector = !_showTagSelector;
+                                setState(() {});
+                              },
+                            ),
+                          ),
+                        if (_showTagSelector == true) ...[
+                          SizedBox(height: 10),
                           Container(
                             width: double.infinity,
                             child: TagSelector(
+                              selectedTags: _selectedTags,
                               onChanged: (tags) {
                                 setState(() {
-                                  _selectedTags =
-                                      tags; // Aquí se actualiza la lista de tags seleccionados
+                                  _selectedTags = tags;
+                                  // Aquí se actualiza la lista de tags seleccionados
                                 });
                               },
                             ),
                           ),
+                        ],
                         SizedBox(height: 10),
                         Row(
                           mainAxisAlignment: _selectedImage != null
@@ -1003,23 +1059,112 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               : MainAxisAlignment.center,
                           children: [
                             _selectedImage != null
-                                ? Image.file(_selectedImage!, height: 150)
+                                ? Image.file(
+                                    _selectedImage!,
+                                    height: 150,
+                                    width: 280,
+                                    fit: BoxFit.cover,
+                                  )
                                 : const SizedBox.shrink(),
-                            SizedBox(
-                              width: 200,
-                              height: 60,
-                              child: ElevatedButton(
-                                style: ButtonStyle(),
-                                onPressed: _pickImage,
-                                child: _selectedImage == null
-                                    ? const Text("Seleccionar imagen")
-                                    : const Text('Cambiar de imagen'),
-                              ),
+                            Center(
+                              child: _selectedImage != null
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color:
+                                              AppTheme.logo, // color del borde
+                                          width: 2, // grosor
+                                        ),
+                                        borderRadius:
+                                            BorderRadius.circular(18.0),
+                                      ),
+                                      child: IconButton(
+                                        onPressed: _pickImage,
+                                        icon: Image.asset(
+                                          'assets/pincel3.png',
+                                          height: 24,
+                                          width: 24,
+                                        ),
+                                      ),
+                                    )
+                                  : TextButton(
+                                      style: ButtonStyle(
+                                        shape: WidgetStateProperty.all<
+                                            RoundedRectangleBorder>(
+                                          RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(18.0),
+                                            side: const BorderSide(
+                                                color: AppTheme.logo, width: 2),
+                                          ),
+                                        ),
+                                      ),
+                                      onPressed: _pickImage,
+                                      child: const Text(
+                                        ' Seleccionar imagen ',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            fontSize: 20),
+                                      ),
+                                    ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
-                        Row(
+
+                        const SizedBox(height: 10),
+
+                        if (_selectedDateTime == null)
+                          Center(
+                            child: TextButton(
+                              style: ButtonStyle(
+                                shape: WidgetStateProperty.all<
+                                    RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(18.0),
+                                    side: const BorderSide(
+                                        color: AppTheme.logo, width: 2),
+                                  ),
+                                ),
+                                backgroundColor:
+                                    WidgetStateProperty.all(Colors.transparent),
+                              ),
+                              onPressed: pickStartDateTime,
+                              child: const Text(
+                                ' Seleccionar fecha y hora ',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w800, fontSize: 20),
+                              ),
+                            ),
+                          ),
+                        if (_selectedDateTime != null)
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(formattedStartDate,
+                                    style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppTheme.logo)),
+                                const SizedBox(width: 15),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: AppTheme.logo, // color del borde
+                                      width: 2, // grosor
+                                    ),
+                                    borderRadius: BorderRadius.circular(18.0),
+                                  ),
+                                  child: IconButton(
+                                    onPressed: pickStartDateTime,
+                                    icon: Image.asset(
+                                      'assets/pincel3.png',
+                                      height: 24,
+                                      width: 24,
+                                    ),
+                                  ),
+                                )
+                              ]),
+                        /* Row(
                           mainAxisAlignment: _selectedDateTime == null
                               ? MainAxisAlignment.center
                               : MainAxisAlignment.spaceBetween,
@@ -1037,8 +1182,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                             .primary
                                             .withOpacity(0.5);
                                       }
-                                      return Colors
-                                          .transparent; // fondo normal sin selección
+                                      return Colors.transparent;
                                     }),
                                   ),
                                   onPressed: pickStartDateTime,
@@ -1055,7 +1199,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                     TextStyle(color: Colors.red, fontSize: 12),
                               )
                           ],
-                        ),
+                        ),*/
                         SizedBox(height: 10),
                         if (_selectedPromo == true)
                           Row(
@@ -1196,20 +1340,259 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                             ],
                           ),
 
-                        SizedBox(height: 30),
-                        SizedBox(
-                          height: 80,
-                          width: MediaQuery.of(context).size.width,
-                          child: ElevatedButton(
+                        Text(
+                          'Previsualización del plan',
+                          style: TextStyle(
+                              fontSize: 20,
+                              color: AppTheme.logo,
+                              fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(height: 10),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: 220),
+                          child: Container(
+                            width: MediaQuery.of(context).size.width * 0.95,
+                            child: Column(
+                              children: [
+                                Stack(children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(16),
+                                      topRight: Radius.circular(16),
+                                    ),
+                                    child: Container(
+                                      height: 110,
+                                      width: double.infinity,
+                                      child: _selectedImage == null
+                                          ? Image.asset('assets/solocarita.png')
+                                          : Image.file(
+                                              _selectedImage!,
+                                              fit: BoxFit.cover,
+                                            ),
+                                    ),
+                                  ),
+                                  if (_selectedGratisOption == true &&
+                                      _selectedPlanType != PlanType.private)
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.7),
+                                          border: Border.all(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(
+                                                    0.8), // Color del borde
+                                            width: 2.0, // Grosor del borde
+                                          ),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          'GRATIS',
+                                          style: TextStyle(fontSize: 15),
+                                        ),
+                                      ),
+                                    ),
+                                ]),
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(minHeight: 110),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.cardColor,
+                                      borderRadius: BorderRadius.only(
+                                        bottomLeft: Radius.circular(16),
+                                        bottomRight: Radius.circular(16),
+                                      ),
+                                    ),
+                                    child: Center(
+                                        child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          _selectedDateTime != null
+                                              ? DateBox(
+                                                  date: _selectedDateTime ??
+                                                      DateTime.now())
+                                              : Container(
+                                                  width: 70,
+                                                  height: 90,
+                                                  decoration: BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              16),
+                                                      color: Color.fromARGB(
+                                                          152, 0, 0, 0)),
+                                                  child: const Padding(
+                                                    padding:
+                                                        EdgeInsets.all(8.0),
+                                                    child: Column(
+                                                      children: [
+                                                        Text('DIA',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 30,
+                                                                height: 1,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w500)),
+                                                        Text('MES',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 20,
+                                                                height: 1,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600)),
+                                                        SizedBox(height: 2),
+                                                        Text('HORA',
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize: 20,
+                                                                height: 1,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w600))
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            //padding: const EdgeInsets.fromLTRB(8.0, 0, 0, 0),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  _titleController.text.isEmpty
+                                                      ? 'Título del plan'
+                                                      : _titleController.text,
+                                                  style: TextStyle(
+                                                      fontSize: 25,
+                                                      fontWeight:
+                                                          FontWeight.w700),
+                                                  softWrap:
+                                                      true, // 👈 permite salto de línea
+                                                  overflow:
+                                                      TextOverflow.visible,
+                                                ),
+                                                Text(
+                                                    _shortDescriptionController
+                                                            .text.isEmpty
+                                                        ? 'Descripción breve'
+                                                        : _shortDescriptionController
+                                                            .text,
+                                                    style: TextStyle(
+                                                        fontSize: 20)),
+                                                SizedBox(height: 5),
+                                                if (_selectedTags.isNotEmpty)
+                                                  SizedBox(
+                                                    width:
+                                                        MediaQuery.of(context)
+                                                                .size
+                                                                .width *
+                                                            0.70,
+                                                    child: Wrap(
+                                                      spacing: 4,
+                                                      runSpacing: 2,
+                                                      children: (_allTags ?? [])
+                                                          // solo los tags seleccionados
+                                                          .where((tag) =>
+                                                              _selectedTags
+                                                                  .contains(
+                                                                      tag.id))
+                                                          .map((tag) {
+                                                        return Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal: 6,
+                                                                  vertical: 2),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                    0.8),
+                                                            border: Border.all(
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                              width: 1.5,
+                                                            ),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        10),
+                                                          ),
+                                                          child: Text(
+                                                            tag.name,
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Theme.of(
+                                                                      context)
+                                                                  .colorScheme
+                                                                  .primary,
+                                                            ),
+                                                          ),
+                                                        );
+                                                      }).toList(),
+                                                    ),
+                                                  )
+                                              ],
+                                            ),
+                                          )
+                                        ],
+                                      ),
+                                    )),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+                        Center(
+                          child: SizedBox(
+                            height: 80,
+                            width: MediaQuery.of(context).size.width,
+                            child: TextButton(
+                              style: ButtonStyle(
+                                alignment: Alignment.center,
+                                shape: MaterialStateProperty.all<
+                                    RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(25.0),
+                                    side: BorderSide(
+                                        color: AppTheme.logo, width: 2),
+                                  ),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  ' Crea ',
+                                  style: TextStyle(
+                                      height: 1,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 50),
+                                ),
+                              ),
                               onPressed: _submitForm,
-                              child: Text(
-                                'Crea',
-                                style: TextStyle(
-                                    fontSize: 35,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black),
-                              )),
-                        )
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   )

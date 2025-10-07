@@ -17,7 +17,8 @@ class UserProfile {
   final List<Evento>? eventos;
   final List<Evento>? eventosCreados;
   final bool? creador;
-  final int? availableFreePlans;
+  final bool? canCreateFreePlan;
+  final bool? canCreatePaymentPlan;
   final List<Message>? unreadMessages;
 
   UserProfile(
@@ -31,11 +32,13 @@ class UserProfile {
       this.tags,
       this.eventos,
       this.creador,
-      this.availableFreePlans,
+      this.canCreateFreePlan,
+      this.canCreatePaymentPlan,
       this.eventosCreados,
       this.unreadMessages});
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    print('json del userprofile: $json');
     var a = UserProfile(
         uuid: json['uuid'],
         username: json['username'],
@@ -44,7 +47,8 @@ class UserProfile {
         userImageUrl: json['image'],
         email: json['email'],
         creador: json['creador'],
-        availableFreePlans: json['available_planes_gratis'],
+        canCreateFreePlan: json['can_create_free_plan'],
+        canCreatePaymentPlan: json['can_create_payment_plan'],
         tags: json['tags'] != null
             ? (json['tags'] as List)
                 .map((tagJson) =>

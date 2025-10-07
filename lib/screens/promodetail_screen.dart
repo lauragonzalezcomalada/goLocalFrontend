@@ -21,8 +21,9 @@ import 'package:worldwildprova/widgets/usages.dart';
 
 class PromoDetail extends StatefulWidget {
   final String promoUuid;
+  final String? userToken;
 
-  const PromoDetail({super.key, required this.promoUuid});
+  const PromoDetail({super.key, required this.promoUuid, this.userToken});
 
   @override
   _PromoDetailState createState() => _PromoDetailState();
@@ -57,7 +58,8 @@ class _PromoDetailState extends State<PromoDetail> {
       final response = await http.get(
           Uri.parse('${Config.serverIp}/promos/?promo_uuid=$promoUuid'),
           headers: {
-            'Authorization': 'Bearer ${await authService.getAccessToken()}'
+            'Authorization':
+                'Bearer ${widget.userToken != null ? widget.userToken : authService.getAccessToken()}'
           });
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -84,7 +86,7 @@ class _PromoDetailState extends State<PromoDetail> {
     var previousActiveStatus = promo!.active;
 
     if (previousActiveStatus == false &&
-        authService.currentUser!.availableFreePlans == 0) {
+        authService.currentUser!.canCreateFreePlan == false) {
       showDialog(
         context: context,
         barrierDismissible: true,
@@ -176,6 +178,10 @@ class _PromoDetailState extends State<PromoDetail> {
 
   @override
   Widget build(BuildContext context) {
+    print('inicia el build del promo detail<');
+    print('promo es null? ${promo == null}');
+    print('createdbyuser $promo');
+
     if (promo == null) {
       return Center(
         child: Image.asset(
@@ -185,8 +191,6 @@ class _PromoDetailState extends State<PromoDetail> {
         ),
       );
     }
-    print('createdbyuser ${promo!.created_by_user}');
-
     String formattedStartDate =
         DateFormat('EEEE, d \'de\' MMMM', 'es_ES').format(promo!.dateTime);
     return Scaffold(
@@ -349,8 +353,7 @@ class _PromoDetailState extends State<PromoDetail> {
                       MapaDesdeBackend(
                         lat: promo!.lat!,
                         long: promo!.long!,
-                        imageUrl:
-                            promo!.imageUrl != null ? promo!.imageUrl! : null,
+                        direccion: promo!.direccion!,
                       ),
                       if (_showAsistentes)
                         Positioned.fill(
@@ -531,7 +534,9 @@ class _PromoDetailState extends State<PromoDetail> {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 30)))))),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0, // mismo control
+        selectedLabelStyle: const TextStyle(fontSize: 16),
+        unselectedLabelStyle: const TextStyle(fontSize: 14),
+        currentIndex: 0,
         onTap: (index) {
           Navigator.pushAndRemoveUntil(
             context,

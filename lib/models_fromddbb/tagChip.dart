@@ -26,12 +26,17 @@ class TagChip extends StatelessWidget {
             size: 20,
             color: Theme.of(context).colorScheme.primary,
           ),*/
-          Text(tag.icon),
+          Text(
+            tag.icon,
+            style: TextStyle(fontSize: 20),
+          ),
           const SizedBox(width: 4),
           Text(
             tag.name,
             style: TextStyle(
-                fontSize: 20, color: Theme.of(context).colorScheme.primary),
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+                color: Theme.of(context).colorScheme.primary),
           ),
         ],
       ),

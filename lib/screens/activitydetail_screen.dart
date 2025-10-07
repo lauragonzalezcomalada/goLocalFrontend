@@ -113,7 +113,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
 
     if (previousActiveStatus == false &&
         activity!.gratis == true &&
-        authService.currentUser!.availableFreePlans == 0) {
+        authService.currentUser!.canCreateFreePlan == false) {
       showDialog(
         context: context,
         barrierDismissible: true,
@@ -129,6 +129,47 @@ class _ActivityDetailState extends State<ActivityDetail> {
           ),
           content: Text(
               'Se te terminaron los planes gratuitos. Entra a esta página para más información xxxx'),
+        ),
+      );
+    }
+    if (activity!.gratis == false &&
+        authService.currentUser!.creador == false) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Color.fromARGB(255, 1, 16, 79).withOpacity(0.5),
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
+              width: 2, // ✅ Grosor del borde
+            ), // ✅ Bordes redondeados
+          ),
+          content: Text(
+              'Necesitas tener un perfil de creador para poder activar planes pagos. Entra a este link y podrás configurarlo xxxx'),
+        ),
+      );
+    }
+    if (activity!.gratis == false &&
+        authService.currentUser!.canCreatePaymentPlan == false &&
+        authService.currentUser!.creador == true) {
+      showDialog(
+        context: context,
+        barrierDismissible: true,
+        barrierColor: Color.fromARGB(255, 1, 16, 79).withOpacity(0.5),
+        builder: (context) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
+              width: 2, // ✅ Grosor del borde
+            ), // ✅ Bordes redondeados
+          ),
+          content: Text(
+              'Se te terminaron los planes de pago que puedes crear. Para ampliarlos, entra en el portal web: xxxx'),
         ),
       );
     }
@@ -237,16 +278,12 @@ class _ActivityDetailState extends State<ActivityDetail> {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final url = data['init_point'].toString().trim();
-      // o 'sandbox_init_point'
-      print('url: ${url}');
       final uri = Uri.parse(url);
-
-      //final uri = Uri.parse("https://flutter.dev");
-      //if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-      /* } else {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
         throw 'No se pudo abrir la URL de Mercado Pago';
-      }*/
+      }
     } else {
       throw 'Error creando preference: ${response.body}';
     }
@@ -254,9 +291,8 @@ class _ActivityDetailState extends State<ActivityDetail> {
     if (anyCreated == true) {
       setState(() {
         _isLoading = false;
-        activity?.going = true; // actualizamos la variable
-        _totalEntradas =
-            0; // si querés resetear el contador de entradas seleccionadas
+        activity?.going = true;
+        _totalEntradas = 0;
         cantidades.updateAll((key, value) => 0);
       });
     }
@@ -280,23 +316,20 @@ class _ActivityDetailState extends State<ActivityDetail> {
       body: Stack(children: [
         SingleChildScrollView(
           child: Padding(
-            padding:
-                const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 0.0), //espacio externo
+            padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 0.0),
             child: Container(
               width: double.infinity,
               constraints: BoxConstraints(
                 minHeight: MediaQuery.of(context).size.height * 0.8,
-              ), // Ancho máximo
+              ),
               decoration: BoxDecoration(
-                //color: Colors.amber,
-                borderRadius: BorderRadius.circular(16), // Bordes redondeados
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(
-                          16), // Solo bordes superiores redondeados
+                      topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
                     ),
                     child: Stack(children: [
@@ -318,15 +351,15 @@ class _ActivityDetailState extends State<ActivityDetail> {
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        height: 300, // altura del degradat
+                        height: 300,
                         child: Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.bottomRight,
                               end: Alignment.topRight,
                               colors: [
-                                Colors.white54, // color de baix
-                                Colors.transparent, // color de dalt
+                                Colors.white54,
+                                Colors.transparent,
                               ],
                             ),
                           ),
@@ -360,9 +393,8 @@ class _ActivityDetailState extends State<ActivityDetail> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: (active ?? false)
                                     ? Colors.green
-                                    : Colors.red, // color de fondo
-                                foregroundColor:
-                                    Colors.white, // color del texto
+                                    : Colors.red,
+                                foregroundColor: Colors.white,
                                 padding: EdgeInsets.symmetric(
                                     horizontal: 24, vertical: 12),
                                 textStyle: TextStyle(
@@ -370,8 +402,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                                   fontWeight: FontWeight.bold,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      8), // bordes redondeados
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                               onPressed: () {
@@ -401,7 +432,8 @@ class _ActivityDetailState extends State<ActivityDetail> {
                     child: Row(
                       children: [
                         Text(formattedStartDate,
-                            style: TextStyle(fontSize: 23)),
+                            style: TextStyle(
+                                fontSize: 23, fontWeight: FontWeight.w500)),
                         Spacer(),
                         TextButton(
                           style: TextButton.styleFrom(
@@ -445,8 +477,8 @@ class _ActivityDetailState extends State<ActivityDetail> {
                         height: 20,
                       ),
                       Wrap(
-                        spacing: 2.0, //espacio horizontal
-                        runSpacing: 0, // espacio vertical entre líneas de chips
+                        spacing: 2.0,
+                        runSpacing: 0,
                         children: activity!.tags!
                             .map((tag) => TagChip(tag: tag))
                             .toList(),
@@ -455,25 +487,85 @@ class _ActivityDetailState extends State<ActivityDetail> {
                         height: 20,
                       ),
                       MapaDesdeBackend(
-                        lat: activity!.lat!,
-                        long: activity!.long!,
-                        imageUrl: activity!.imageUrl,
-                      ),
+                          lat: activity!.lat!,
+                          long: activity!.long!,
+                          direccion: activity!.direccion!),
                       SizedBox(height: 20),
                       if (activity!.entradas != null &&
                           activity!.entradas!.isNotEmpty) ...[
-                        Container(
+                        Column(
+                          children: activity!.entradas!.map((entrada) {
+                            final double baseOpacity = 0.4;
+                            final double increment = 0.2;
+                            final index = activity!.entradas!.indexOf(entrada);
+                            double opacity = (baseOpacity + (index * increment))
+                                .clamp(0.0, 1.0);
+
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 5),
+                              padding: const EdgeInsets.fromLTRB(8, 8, 5, 8),
+                              decoration: BoxDecoration(
+                                color: entrada.disponibles > 0
+                                    ? Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withOpacity(opacity)
+                                    : Colors.grey,
+                                borderRadius: BorderRadius.circular(10),
+                                border:
+                                    Border.all(color: Colors.black, width: 2),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(entrada.titulo,
+                                          style: const TextStyle(
+                                              fontSize: 25, height: 1.2)),
+                                      Text(entrada.desc ?? '',
+                                          style: const TextStyle(
+                                              fontSize: 20, height: 1.3)),
+                                    ],
+                                  ),
+                                  Column(
+                                    children: [
+                                      EntradasCounter(
+                                        initialValue:
+                                            cantidades[entrada.uuid] ?? 0,
+                                        onChange: (count) {
+                                          setState(() {
+                                            cantidades[entrada.uuid!] = count;
+                                          });
+                                          _calcularTotalEntradas();
+                                        },
+                                        max: entrada.disponibles,
+                                        enabled: entrada.disponibles > 0,
+                                      ),
+                                      Text('${entrada.precio} ARS',
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                          )),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        /* Container(
                           height: 300,
                           child: ListView.builder(
                             shrinkWrap: true,
                             itemCount: activity!.entradas!.length,
                             itemBuilder: (context, index) {
                               var entrada = activity!.entradas![index];
-                              // calculamos la opacidad según el índice
-                              final double baseOpacity =
-                                  0.4; // primera opacidad
-                              final double increment =
-                                  0.2; // cuánto sube cada uno
+
+                              final double baseOpacity = 0.4;
+                              final double increment = 0.2;
                               double opacity =
                                   (baseOpacity + (index * increment))
                                       .clamp(0.0, 1.0);
@@ -553,7 +645,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                               );
                             },
                           ),
-                        ),
+                        ),*/
                       ],
                       if (activity!.tickets_link != null) ...[
                         Text(
@@ -770,7 +862,8 @@ class _ActivityDetailState extends State<ActivityDetail> {
                             ? const Center(
                                 child: Text(
                                 'COMPRA TUS ENTRADAS',
-                                style: TextStyle(fontSize: 30),
+                                style: TextStyle(
+                                    fontSize: 30, fontWeight: FontWeight.w800),
                               ))
                             : Center(
                                 child: Text(
@@ -782,6 +875,8 @@ class _ActivityDetailState extends State<ActivityDetail> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        selectedLabelStyle: const TextStyle(fontSize: 16),
+        unselectedLabelStyle: const TextStyle(fontSize: 14),
         currentIndex: 0, // mismo control
         onTap: (index) {
           Navigator.pushAndRemoveUntil(
@@ -793,8 +888,13 @@ class _ActivityDetailState extends State<ActivityDetail> {
           );
         },
         items: [
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.place, size: 35), label: 'Lugares'),
+          BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/explorar.png',
+                height: 30, // ajustá el tamaño
+                width: 30,
+              ),
+              label: 'Explorar'),
           BottomNavigationBarItem(
               icon: Image.asset(
                 'assets/pincel3.png',

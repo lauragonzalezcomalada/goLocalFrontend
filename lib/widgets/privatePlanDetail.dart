@@ -459,7 +459,7 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
                     MapaDesdeBackend(
                       lat: privatePlan!.lat!,
                       long: privatePlan!.long!,
-                      imageUrl: privatePlan!.imageUrl,
+                      direccion: privatePlan!.direccion!,
                     ),
                     const SizedBox(height: 10),
                     if (privatePlan!.items != null)
@@ -668,6 +668,8 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        selectedLabelStyle: const TextStyle(fontSize: 16),
+        unselectedLabelStyle: const TextStyle(fontSize: 14),
         currentIndex: 0, // mismo control
         onTap: (index) {
           Navigator.pushAndRemoveUntil(
@@ -679,8 +681,13 @@ class _PrivatePlanDetailState extends State<PrivatePlanDetail> {
           );
         },
         items: [
-          const BottomNavigationBarItem(
-              icon: Icon(Icons.place, size: 35), label: 'Lugares'),
+          BottomNavigationBarItem(
+              icon: Image.asset(
+                'assets/explorar.png',
+                height: 30, // ajustá el tamaño
+                width: 30,
+              ),
+              label: 'Explorar'),
           BottomNavigationBarItem(
               icon: Image.asset(
                 'assets/pincel3.png',
