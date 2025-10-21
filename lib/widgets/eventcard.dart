@@ -45,6 +45,7 @@ class EventCard extends StatelessWidget {
               context,
               MaterialPageRoute(
                   builder: (context) => PromoDetail(
+                        userToken: userToken!,
                         promoUuid: activityUuid,
                       )));
         } else {

@@ -28,6 +28,7 @@ class ActivitiesList extends StatefulWidget {
 class _ActivitiesListState extends State<ActivitiesList> {
   bool _showTagSelector = false;
   bool? _gratisSelector;
+  bool noActivities = false;
 
   List<Activity> activities = [];
 
@@ -46,8 +47,9 @@ class _ActivitiesListState extends State<ActivitiesList> {
   @override
   void initState() {
     super.initState();
-    placeUuid = widget.placeUuid; // Asignamos el UUID recibido
+    placeUuid = widget.placeUuid;
     placeName = widget.placeName;
+
     fetchActivities();
     fetchTags();
     initSelectedTags();
@@ -104,10 +106,16 @@ class _ActivitiesListState extends State<ActivitiesList> {
     try {
       final response =
           await http.get(Uri.parse('${Config.serverIp}/activities'));
-      print('status code activities ${response.statusCode}');
-      print('body de activities ${response.body}');
+
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
+
+        if (data.isEmpty) {
+          setState(() {
+            noActivities = true;
+          });
+          return;
+        }
         setState(() {
           activities = data
               .map((activityJson) => Activity.fromJson(activityJson, false))

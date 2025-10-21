@@ -183,26 +183,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Cambiar imagen'),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Eliminar imagen'),
-              onTap: () {
-                Navigator.pop(context);
-                _removeImage();
-              },
-            ),
-          ],
+        child: Container(
+          /* decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: BoxBorder.all(
+                color: AppTheme.logo,
+                width: 2,
+              )),*/
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: AppTheme.logo),
+                title: const Text(
+                  'CAMBIAR IMAGEN',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.logo),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickImage();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete, color: AppTheme.logo),
+                title: const Text(
+                  'ELIMINAR IMAGEN',
+                  style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.logo),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _removeImage();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -339,7 +359,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     });
                                   },
                                   child: const Text('EDITAR MI DESCRIPCIÓN',
-                                      style: TextStyle(fontSize: 28))),
+                                      style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.w800))),
                               if (_showEditDescription == true)
                                 Column(
                                   children: [
@@ -387,7 +409,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   },
                                   child: Text(
                                     'EDITAR MIS TAGS',
-                                    style: TextStyle(fontSize: 28),
+                                    style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800),
                                   )),
                               if (_showEditTags == true)
                                 Column(
@@ -485,9 +509,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   onPressed: () {
                                     authService.logout();
                                   },
-                                  child: Text(
+                                  child: const Text(
                                     'CERRAR SESIÓN',
-                                    style: TextStyle(fontSize: 28),
+                                    style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w800),
                                   ))
                             ],
                           ),
@@ -526,8 +552,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 8.0),
                     child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.start, // centra verticalmente
+                      mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Center(
@@ -537,10 +562,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .primary, // color del borde
-                                width: 5, // grosor del borde
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 5,
                               ),
                             ),
                             child: ClipOval(
@@ -612,7 +635,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                           .userImageUrl!),
                                                   fit: BoxFit.cover,
                                                 )
-                                              : DecorationImage(
+                                              : const DecorationImage(
                                                   image: AssetImage(
                                                       'assets/solocarita.png'),
                                                   fit: BoxFit.cover))),
@@ -636,8 +659,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Padding(
                               padding: const EdgeInsets.only(top: 10),
                               child: SizedBox(
-                                width: MediaQuery.of(context).size.width *
-                                    0.90, // limita al 50% del ancho de pantalla
+                                width: MediaQuery.of(context).size.width * 0.90,
                                 child: Column(children: [
                                   if (userProfile.originLocation != null)
                                     Align(
@@ -652,6 +674,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       softWrap: true,
                                       style: TextStyle(
                                           fontSize: 20,
+                                          color: Colors.black,
                                           fontWeight: FontWeight.w400,
                                           fontFamily: 'BarlowCondensed'),
                                     ),

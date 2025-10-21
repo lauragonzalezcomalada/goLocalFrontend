@@ -26,7 +26,8 @@ class Ticket {
         compradorName: json['nombre'],
         compradorEmail: json['email'],
         qrUrl: /*Config.serverIp + */ json['qr_code'],
-        eventStartDateTime: DateTime.parse(json['entrada']['activity_start']),
+        eventStartDateTime:
+            DateTime.parse(json['entrada']['activity_start']).toLocal(),
         eventImageUrl: json['entrada']['activity_image']);
     return t;
   }

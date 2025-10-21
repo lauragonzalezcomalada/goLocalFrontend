@@ -71,15 +71,8 @@ class PrivatePlan extends ListableItem implements Evento {
         going: json['user_isgoing'],
         gratis: json['gratis'],
         price: json['price'],
-        // imageUrl: Config.serverIp +
-        //   json["image"]
-        /*== null
-          ? null
-          : fromUserProfile == false
-              ? Config.serverIp + json["image"]
-              : json["image"]*/
-        //,
-        dateTime: DateTime.parse(json['startDateandtime']),
+        imageUrl: json["image"],
+        dateTime: DateTime.parse(json['startDateandtime']).toLocal(),
         invitationCode: json['invitation_code'] != null
             ? 'golocal://privateplaninvitation/' + json['invitation_code']
             : '',

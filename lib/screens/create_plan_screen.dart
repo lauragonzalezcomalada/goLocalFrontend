@@ -604,18 +604,20 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                   SizedBox(height: 30),
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Creá tu',
+                    child: Text('CRÉA TU',
                         style: TextStyle(
                             fontSize: 60,
-                            fontWeight: FontWeight.w600,
+                            color: AppTheme.logo,
+                            fontWeight: FontWeight.w900,
                             height: 0.8)),
                   ),
                   const Align(
                     alignment: Alignment.centerRight,
-                    child: Text('eVento lOcal',
+                    child: Text('EVENTO LOCAL',
                         style: TextStyle(
                             fontSize: 60,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.w900,
+                            color: AppTheme.logo,
                             height: 0.8)),
                   ),
                   const SizedBox(height: 30),
@@ -769,7 +771,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Text(
+                              const Text(
                                 'Es gratis?      ',
                                 style: TextStyle(
                                     fontSize: 20, fontWeight: FontWeight.w500),
@@ -1357,8 +1359,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 Stack(children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(16),
-                                      topRight: Radius.circular(16),
+                                      topLeft: Radius.circular(20),
+                                      topRight: Radius.circular(20),
                                     ),
                                     child: Container(
                                       height: 110,

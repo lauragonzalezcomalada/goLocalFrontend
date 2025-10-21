@@ -39,7 +39,8 @@ class Activity extends ListableItem implements Evento {
   final List<Entrada>? entradas;
   final List<Reserva>? reservas_forms;
   final String? tickets_link;
-  final List<Usuario>? creadores;
+  final List<Usuario>? colaboradores;
+  final Usuario? creador;
 
   Activity(
       {required this.uuid,
@@ -66,7 +67,8 @@ class Activity extends ListableItem implements Evento {
       this.active,
       this.reservas_forms,
       this.tickets_link,
-      this.creadores});
+      this.colaboradores,
+      this.creador});
 
   // Método para convertir el JSON recibido en un objeto Activity para listar
   factory Activity.fromJson(Map<String, dynamic> json, bool fromUserProfile) {
@@ -74,11 +76,9 @@ class Activity extends ListableItem implements Evento {
         uuid: json['uuid'],
         name: json['name'],
         shortDesc: json['shortDesc'],
-        //  type: json["type"],
         placeName: json["place_name"],
         imageUrl: json["image"] == null ? null : json["image"],
-        // : json["image"],
-        dateTime: DateTime.parse(json['startDateandtime']),
+        dateTime: DateTime.parse(json['startDateandtime']).toLocal(),
         tags: json['tag_detail'] != null
             ? (json['tag_detail'] as List)
                 .map((tagJson) => Tag.fromJson(tagJson))
@@ -94,7 +94,6 @@ class Activity extends ListableItem implements Evento {
   }
   // Método para convertir el JSON recibido en un objeto Activity para dar los detalles
   factory Activity.fromServerJson(Map<String, dynamic> json) {
-    print('json de una activity detail: $json');
     return Activity(
         uuid: json['uuid'],
         name: json['name'],
@@ -103,10 +102,9 @@ class Activity extends ListableItem implements Evento {
         //  type: json["type"],
         placeName: json["place_name"],
         imageUrl: json["image"],
-        dateTime: DateTime.parse(json['startDateandtime']),
+        dateTime: DateTime.parse(json['startDateandtime']).toLocal(),
         tags: (json['tag_detail'] as List)
-            .map((tagJson) =>
-                Tag.fromJson(tagJson)) // Mapea cada tag a la clase Tag
+            .map((tagJson) => Tag.fromJson(tagJson))
             .toList(),
         gratis: json['gratis'],
         activityCreatorImageUrl: json['creador_image'] == null
@@ -128,13 +126,14 @@ class Activity extends ListableItem implements Evento {
         reservas_forms: (json['reservas_forms'] as List)
             .map((reservaFormJson) => Reserva.fromJson(reservaFormJson))
             .toList(),
-        creadores: json['creadores'] != null
-            ? (json['creadores'] as List)
+        colaboradores: json['colaboradores'] != null
+            ? (json['colaboradores'] as List)
                 .map((usuarioJson) => Usuario.fromJson(usuarioJson))
                 .toList()
             : null,
         tiene_tickets: json['tiene_ticket'],
         active: json['active'],
-        tickets_link: json['tickets_link']);
+        tickets_link: json['tickets_link'],
+        creador: Usuario.fromJson(json['creador']));
   }
 }

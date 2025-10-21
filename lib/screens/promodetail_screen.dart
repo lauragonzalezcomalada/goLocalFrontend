@@ -21,9 +21,10 @@ import 'package:worldwildprova/widgets/usages.dart';
 
 class PromoDetail extends StatefulWidget {
   final String promoUuid;
-  final String? userToken;
+  final String userToken;
 
-  const PromoDetail({super.key, required this.promoUuid, this.userToken});
+  const PromoDetail(
+      {super.key, required this.promoUuid, required this.userToken});
 
   @override
   _PromoDetailState createState() => _PromoDetailState();
@@ -57,24 +58,20 @@ class _PromoDetailState extends State<PromoDetail> {
     try {
       final response = await http.get(
           Uri.parse('${Config.serverIp}/promos/?promo_uuid=$promoUuid'),
-          headers: {
-            'Authorization':
-                'Bearer ${widget.userToken != null ? widget.userToken : authService.getAccessToken()}'
-          });
+          headers: {'Authorization': 'Bearer ${widget.userToken}'});
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
           promo = Promo.fromServerJson(data);
           date = DateFormat('dd/MM/yyyy').format(promo!.dateTime);
-          //  startTime = DateFormat('HH:mm').format(promo!.dateTime);
-          // endTime = DateFormat('HH:mm').format(promo!.endDateTime);
           _asistenciaController = promo!.going!;
           asistentes = promo!.asistentes!;
           active = promo!.active;
         });
       } else {
         // Si la respuesta es un error, muestra un mensaje
-        throw Exception('Failed to load places');
+        throw Exception('Failed to load promos');
       }
     } catch (e) {
       // Si ocurre un error en la solicitud
@@ -96,16 +93,15 @@ class _PromoDetailState extends State<PromoDetail> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
             side: BorderSide(
-              color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
-              width: 2, // ✅ Grosor del borde
-            ), // ✅ Bordes redondeados
+              color: Color.fromARGB(255, 1, 16, 79),
+              width: 2,
+            ),
           ),
           content: Text(
               'Se te terminaron los planes gratuitos. Entra a esta página para más información xxxx'),
         ),
       );
     }
-    //SI ARRIBA FINS AQUÍ ES PERQUÈ ES GRATIS, I TENS PLANS PER PUBLICAR-LO
     final response = await http.post(
         Uri.parse(
           '${Config.serverIp}/handle_visibility_change/',
@@ -162,8 +158,7 @@ class _PromoDetailState extends State<PromoDetail> {
               "uuid": data['reserva_uuid'],
               "values": data['valores'],
             }));
-    print('resonse del reservar ${response.statusCode}');
-    print('y el body ${response.body}');
+
     if (response.statusCode == 200) {
       setState(() {
         _isLoading = false;
@@ -178,10 +173,6 @@ class _PromoDetailState extends State<PromoDetail> {
 
   @override
   Widget build(BuildContext context) {
-    print('inicia el build del promo detail<');
-    print('promo es null? ${promo == null}');
-    print('createdbyuser $promo');
-
     if (promo == null) {
       return Center(
         child: Image.asset(
@@ -198,23 +189,20 @@ class _PromoDetailState extends State<PromoDetail> {
       body: Stack(children: [
         SingleChildScrollView(
           child: Padding(
-            padding:
-                const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 0.0), //espacio externo
+            padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 0.0),
             child: Container(
               width: double.infinity,
               constraints: BoxConstraints(
                 minHeight: MediaQuery.of(context).size.height * 0.8,
-              ), // Ancho máximo
+              ),
               decoration: BoxDecoration(
-                //color: Colors.amber,
-                borderRadius: BorderRadius.circular(16), // Bordes redondeados
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(
-                          16), // Solo bordes superiores redondeados
+                      topLeft: Radius.circular(16),
                       topRight: Radius.circular(16),
                     ),
                     child: Stack(children: [
@@ -233,15 +221,15 @@ class _PromoDetailState extends State<PromoDetail> {
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        height: 300, // altura del degradat
+                        height: 300,
                         child: Container(
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.bottomRight,
                               end: Alignment.topRight,
                               colors: [
-                                Colors.white54, // color de baix
-                                Colors.transparent, // color de dalt
+                                Colors.white54,
+                                Colors.transparent,
                               ],
                             ),
                           ),
@@ -256,7 +244,7 @@ class _PromoDetailState extends State<PromoDetail> {
                           child: Text(
                             promo!.name,
                             style: const TextStyle(
-                              color: Color.fromARGB(255, 47, 1, 1),
+                              color: Colors.black,
                               fontSize: 40,
                               height: 1.0,
                               fontWeight: FontWeight.w700,
@@ -275,18 +263,16 @@ class _PromoDetailState extends State<PromoDetail> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: (active ?? false)
                                     ? Colors.green
-                                    : Colors.red, // color de fondo
-                                foregroundColor:
-                                    Colors.white, // color del texto
-                                padding: EdgeInsets.symmetric(
+                                    : Colors.red,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 24, vertical: 12),
-                                textStyle: TextStyle(
+                                textStyle: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                      8), // bordes redondeados
+                                  borderRadius: BorderRadius.circular(20),
                                 ),
                               ),
                               onPressed: () {
@@ -306,17 +292,19 @@ class _PromoDetailState extends State<PromoDetail> {
                       children: [
                         Text(
                           formattedStartDate,
-                          style: TextStyle(fontSize: 20),
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
                         ),
                         Text(
                           ' de ${DateFormat('HH:mm').format(promo!.dateTime)} a ${DateFormat('HH:mm').format(promo!.dateTime)}',
-                          style: TextStyle(fontSize: 20),
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w500),
                         ),
                         Spacer(),
                         TextButton(
                           style: TextButton.styleFrom(
                             minimumSize: Size(0, 0),
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                                 horizontal: 4, vertical: 2),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
@@ -341,19 +329,24 @@ class _PromoDetailState extends State<PromoDetail> {
                   ),
                   Stack(
                     children: [
-                      Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            promo!.desc!,
-                            style: TextStyle(
-                              color: Color.fromARGB(255, 1, 16, 79),
-                              fontSize: 20,
-                            ),
-                          )),
-                      MapaDesdeBackend(
-                        lat: promo!.lat!,
-                        long: promo!.long!,
-                        direccion: promo!.direccion!,
+                      Column(
+                        children: [
+                          Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                promo!.desc!,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 20,
+                                ),
+                              )),
+                          MapaDesdeBackend(
+                            lat: promo!.lat!,
+                            long: promo!.long!,
+                            direccion: promo!.direccion!,
+                          ),
+                          SizedBox(height: 100),
+                        ],
                       ),
                       if (_showAsistentes)
                         Positioned.fill(

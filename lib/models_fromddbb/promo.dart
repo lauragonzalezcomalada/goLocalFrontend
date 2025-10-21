@@ -40,7 +40,6 @@ class Promo extends ListableItem implements Evento {
       required this.name,
       this.shortDesc,
       this.desc,
-      //required this.type,
       this.going,
       required this.placeName,
       this.imageUrl,
@@ -60,7 +59,6 @@ class Promo extends ListableItem implements Evento {
 
   // FOR LISTING
   factory Promo.fromJson(Map<String, dynamic> json, bool fromUserProfile) {
-    // Manejo seguro de tags
     List<Tag>? tagsList;
     if (json['tag_detail'] != null) {
       tagsList = (json['tag_detail'] as List)
@@ -68,38 +66,24 @@ class Promo extends ListableItem implements Evento {
           .toList();
     }
 
-    // Manejo seguro de creador_image
-    String? creadorImage;
-    if (json['creador_image'] != null) {
-      creadorImage = Config.serverIp + json['creador_image'];
-    }
-
-    // Manejo seguro de image
-    String? image;
-    if (json['image'] != null) {
-      image = /*fromUserProfile ? */
-          json['image']; /*: Config.serverIp +json['image'];*/
-    }
-
-    // Manejo seguro de DateTimes
     DateTime dateTime = json['startDateandtime'] != null
-        ? DateTime.parse(json['startDateandtime'])
-        : DateTime.now(); // fallback si no hay fecha
+        ? DateTime.parse(json['startDateandtime']).toLocal()
+        : DateTime.now();
 
     DateTime endDateTime = json['endDateandtime'] != null
-        ? DateTime.parse(json['endDateandtime'])
+        ? DateTime.parse(json['endDateandtime']).toLocal()
         : dateTime.add(Duration(hours: 1)); // fallback si no hay endDate
 
     return Promo(
       uuid: json['uuid'] ?? '',
       name: json['name'] ?? '',
       shortDesc: json['shortDesc'],
-      placeName: json["place_name"] ?? '',
-      imageUrl: image,
+      placeName: json["place"] ?? '',
+      imageUrl: json['image'],
       dateTime: dateTime,
       endDateTime: endDateTime,
       tags: tagsList,
-      activityCreatorImageUrl: creadorImage,
+      activityCreatorImageUrl: json['creador_image'],
       created_by_user: json['created_by_user'] ?? false,
       tiene_tickets: json['tiene_ticket'] ?? false,
       active: json['active'] ?? false,
@@ -129,11 +113,11 @@ class Promo extends ListableItem implements Evento {
       name: json['name'],
       shortDesc: json['shortDesc'],
       desc: json['desc'],
-      placeName: json['place_name'],
+      placeName: json['place'] ?? '',
       going: json['user_isgoing'],
-      imageUrl: json['image'] != null ? Config.serverIp + json['image'] : null,
-      dateTime: DateTime.parse(json['startDateandtime']),
-      endDateTime: DateTime.parse(json['endDateandtime']),
+      imageUrl: json['image'],
+      dateTime: DateTime.parse(json['startDateandtime']).toLocal(),
+      endDateTime: DateTime.parse(json['endDateandtime']).toLocal(),
       tags: tagsList,
       asistentes: json['asistentes'] != null
           ? (json['asistentes'] as List)

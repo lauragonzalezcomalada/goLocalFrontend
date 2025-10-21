@@ -6,6 +6,7 @@ import 'package:worldwildprova/models_fromddbb/tag.dart';
 import 'package:http/http.dart' as http;
 import 'package:worldwildprova/screens/activitydetail_screen.dart';
 import 'package:worldwildprova/screens/promodetail_screen.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'package:worldwildprova/widgets/aux_ActivityCard.dart';
 import 'dart:convert';
@@ -176,6 +177,7 @@ class _PromoListState extends State<PromoList> {
         context,
         MaterialPageRoute(
             builder: (context) => PromoDetail(
+                  userToken: userToken!,
                   promoUuid: promo_uuid,
                 )));
   }
@@ -189,10 +191,27 @@ class _PromoListState extends State<PromoList> {
                     const EdgeInsets.symmetric(vertical: 150, horizontal: 50),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text('No hay ningúna promo registrado aún para $placeName'),
-                    const Text('Sé tu el primero!'),
+                    Text(
+                      'NO HAY NINGUNA PROMO REGISTRADA AÚN PARA ${placeName.toUpperCase()}',
+                      style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.logo),
+                      textAlign: TextAlign.center,
+                    ),
+                    const Text(
+                      '¡SÉ EL PRIMERO!',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.logo),
+                    ),
                     ElevatedButton(
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.all(AppTheme.logo),
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -202,12 +221,20 @@ class _PromoListState extends State<PromoList> {
                           ),
                         );
                       },
-                      child: const Text('Crea una promo!'),
+                      child: const Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text(
+                          'CREÁ UNA PROMO!',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800),
+                        ),
+                      ),
                     )
                   ],
                 )))
         : Column(children: [
-            // 🔍 Buscador
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(

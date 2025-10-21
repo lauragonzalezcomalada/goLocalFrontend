@@ -33,8 +33,7 @@ class _SignInScreenState extends State<SignInScreen> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final authService = Provider.of<AuthService>(context, listen: false);
-      final success =
-          await authService.login(nameController.text, passwordController.text);
+      await authService.login(nameController.text, passwordController.text);
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(

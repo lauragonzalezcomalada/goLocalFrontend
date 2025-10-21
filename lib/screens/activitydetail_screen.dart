@@ -69,7 +69,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
     try {
       final response = await http.get(
           Uri.parse(
-              Config.serverIp + '/activities/?activity_uuid=$activityUuid'),
+              '${Config.serverIp}/activities/?activity_uuid=$activityUuid'),
           headers: {'Authorization': 'Bearer ${widget.userToken}'});
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -175,19 +175,15 @@ class _ActivityDetailState extends State<ActivityDetail> {
     }
     if (activity!.gratis == false && authService.currentUser!.creador == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content:
               Text('¡Recuerda que és más fácil gestionar esto desde la web!'),
-          duration: Duration(seconds: 3), // tiempo que estará visible
-          behavior:
-              SnackBarBehavior.floating, // hace que no se quede pegado al borde
-          margin: EdgeInsets.only(
-              bottom: 100, left: 20, right: 20), // opcional, para ubicarlo
+          duration: Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.only(bottom: 100, left: 20, right: 20),
         ),
       );
     }
-
-    //SI ARRIBA FINS AQUÍ ES PERQUÈ ES GRATIS, I TENS PLANS PER PUBLICAR-LO
 
     final response = await http.post(
         Uri.parse(
@@ -260,7 +256,6 @@ class _ActivityDetailState extends State<ActivityDetail> {
     });
     bool anyCreated = false;
 
-    /* cantidades (MapEntry(3b49d4bf-c4e3-40ef-bf31-d8a433cb421c: 1), MapEntry(573eb5e5-51ae-449d-afb1-edb6e5ce3b65: 1)) */
     final response =
         await http.post(Uri.parse('${Config.serverIp}/crear_compra_simple/'),
             headers: {
@@ -323,14 +318,14 @@ class _ActivityDetailState extends State<ActivityDetail> {
                 minHeight: MediaQuery.of(context).size.height * 0.8,
               ),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
                 children: [
                   ClipRRect(
                     borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      topRight: Radius.circular(16),
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
                     ),
                     child: Stack(children: [
                       SizedBox(
@@ -358,7 +353,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                               begin: Alignment.bottomRight,
                               end: Alignment.topRight,
                               colors: [
-                                Colors.white54,
+                                Colors.black87,
                                 Colors.transparent,
                               ],
                             ),
@@ -374,10 +369,10 @@ class _ActivityDetailState extends State<ActivityDetail> {
                           child: Text(
                             activity!.name,
                             style: const TextStyle(
-                              color: Color.fromARGB(255, 47, 1, 1),
+                              color: AppTheme.logo,
                               fontSize: 40,
                               height: 1.0,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w900,
                             ),
                             softWrap: true,
                             overflow: TextOverflow.visible,
@@ -395,9 +390,9 @@ class _ActivityDetailState extends State<ActivityDetail> {
                                     ? Colors.green
                                     : Colors.red,
                                 foregroundColor: Colors.white,
-                                padding: EdgeInsets.symmetric(
+                                padding: const EdgeInsets.symmetric(
                                     horizontal: 24, vertical: 12),
-                                textStyle: TextStyle(
+                                textStyle: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -433,7 +428,9 @@ class _ActivityDetailState extends State<ActivityDetail> {
                       children: [
                         Text(formattedStartDate,
                             style: TextStyle(
-                                fontSize: 23, fontWeight: FontWeight.w500)),
+                                fontSize: 23,
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.logo)),
                         Spacer(),
                         TextButton(
                           style: TextButton.styleFrom(
@@ -450,11 +447,17 @@ class _ActivityDetailState extends State<ActivityDetail> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('🤸🏻',
-                                  style: TextStyle(fontSize: 20)),
+                              Image.asset(
+                                'assets/solocarita.png',
+                                height: 22, // ajustá el tamaño
+                                width: 22,
+                              ),
+                              SizedBox(width: 2),
                               Text(asistentes.length.toString(),
                                   style: TextStyle(
-                                      fontSize: 20, color: Colors.black)),
+                                      fontSize: 20,
+                                      color: AppTheme.logo,
+                                      fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ),
@@ -473,7 +476,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                                 fontSize: 25,
                                 fontWeight: FontWeight.w400),
                           )),
-                      SizedBox(
+                      const SizedBox(
                         height: 20,
                       ),
                       Wrap(
@@ -652,10 +655,27 @@ class _ActivityDetailState extends State<ActivityDetail> {
                             'Las entradas para este evento se compran en una plataforma externa'),
                       ],
                       SizedBox(height: 20),
-                      /*  Text(
-                        'Este evento está organizado por: ',
-                        style: TextStyle(fontSize: 20, color: Colors.black),
-                      ),*/
+                      Row(
+                        children: [
+                          const Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'Este evento está organizado por: ',
+                              style:
+                                  TextStyle(fontSize: 20, color: Colors.black),
+                            ),
+                          ),
+                          CircleAvatar(
+                            child: activity!.creador!.asistenteImageUrl != null
+                                ? Image.network(
+                                    activity!.creador!.asistenteImageUrl!)
+                                : Image.asset(
+                                    'assets/solocarita.png',
+                                    fit: BoxFit.cover,
+                                  ),
+                          )
+                        ],
+                      ),
                       SizedBox(height: 100),
                     ]),
                     if (_showAsistentes)

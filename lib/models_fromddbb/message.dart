@@ -12,7 +12,7 @@ class Message {
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
-        dateTime: DateTime.parse(json['dateTime']),
+        dateTime: DateTime.parse(json['dateTime']).toLocal(),
         uuid: json['uuid'],
         message: json['message'],
         read: json['read']);

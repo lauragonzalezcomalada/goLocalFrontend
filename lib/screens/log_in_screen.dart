@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'dart:convert';
 import 'package:worldwildprova/screens/profile_screen.dart';
@@ -23,6 +24,7 @@ class _LogInScreenState extends State<LogInScreen> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String _errorMessage = ''; // Para mostrar el mensaje de error
+  bool _showPwd = false;
 
   Future<void> _login() async {
     final username = _usernameController.text;
@@ -47,7 +49,7 @@ class _LogInScreenState extends State<LogInScreen> {
       );
     } else {
       setState(() {
-        _errorMessage = 'Datos incorrectos';
+        _errorMessage = 'DATOS INCORRECTOS';
       });
     }
   }
@@ -81,30 +83,67 @@ class _LogInScreenState extends State<LogInScreen> {
                       children: [
                         TextField(
                           controller: _usernameController,
-                          decoration:
-                              const InputDecoration(labelText: 'Username'),
+                          decoration: const InputDecoration(
+                              labelText: 'USUARIO',
+                              labelStyle: TextStyle(
+                                color: AppTheme.logo,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                              )),
                         ),
                         TextField(
                           controller: _passwordController,
-                          obscureText: true,
-                          decoration:
-                              const InputDecoration(labelText: 'Password'),
+                          obscureText: !_showPwd,
+                          decoration: InputDecoration(
+                            labelText: 'CONTRASEÑA',
+                            labelStyle: const TextStyle(
+                              color: AppTheme.logo,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _showPwd
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: AppTheme.logo,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _showPwd = !_showPwd;
+                                });
+                              },
+                            ),
+                          ),
                         ),
                         if (_errorMessage.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
                               _errorMessage,
-                              style: const TextStyle(color: Colors.red),
+                              style: const TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w600),
                             ),
                           ),
                         const SizedBox(height: 20),
                         ElevatedButton(
+                          style: ButtonStyle(
+                              backgroundColor:
+                                  WidgetStateProperty.all(AppTheme.logo)),
                           onPressed: _login,
-                          child: const Text('Log In'),
+                          child: const Text(
+                            'ENTRÁ',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800),
+                          ),
                         ),
-                        SizedBox(height: 20),
                         ElevatedButton(
+                            style: ButtonStyle(
+                                backgroundColor: WidgetStateProperty.all(
+                                    AppTheme.cardColor)),
                             onPressed: () {
                               Navigator.push(
                                 context,
@@ -113,7 +152,13 @@ class _LogInScreenState extends State<LogInScreen> {
                                 ),
                               );
                             },
-                            child: Text('No tienes cuenta? Create una nueva!'))
+                            child: const Text(
+                              'No tienes cuenta? CREÁ UNA NUEVA!',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 18),
+                            ))
                       ],
                     ));
           })),
