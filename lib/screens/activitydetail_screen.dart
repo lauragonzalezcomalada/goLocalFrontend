@@ -14,10 +14,12 @@ import 'package:worldwildprova/screens/profile_screen.dart';
 import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 import 'package:worldwildprova/widgets/buyTicketsBottomSheet.dart';
+import 'package:worldwildprova/widgets/createALaGorraPayment.dart';
 import 'package:worldwildprova/widgets/createReservaBottomSheet.dart';
 import 'package:worldwildprova/widgets/entradasCounter.dart';
 import 'package:worldwildprova/widgets/mainscaffold.dart';
 import 'package:worldwildprova/widgets/mapafrombckdng.dart';
+import 'package:worldwildprova/widgets/reportEventSheet.dart';
 import 'package:worldwildprova/widgets/shareEventButton.dart';
 
 class ActivityDetail extends StatefulWidget {
@@ -48,14 +50,35 @@ class _ActivityDetailState extends State<ActivityDetail> {
   double _totalEntradas = 0.0;
 
   bool _isLoading = false;
+  bool? aLaGorraActive = false;
+
+  final ScrollController _scrollController = ScrollController();
+  bool _isAtBottom = false;
 
   @override
   void initState() {
     super.initState();
     activityUuid = widget.activityUuid;
     _initLocale();
-    fetchActivity();
     authService = Provider.of<AuthService>(context, listen: false);
+    fetchActivity();
+
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 50) {
+        if (!_isAtBottom) {
+          setState(() {
+            _isAtBottom = true;
+          });
+        }
+      } else {
+        if (_isAtBottom) {
+          setState(() {
+            _isAtBottom = false;
+          });
+        }
+      }
+    });
   }
 
   Future<void> _initLocale() async {
@@ -70,8 +93,11 @@ class _ActivityDetailState extends State<ActivityDetail> {
       final response = await http.get(
           Uri.parse(
               '${Config.serverIp}/activities/?activity_uuid=$activityUuid'),
-          headers: {'Authorization': 'Bearer ${widget.userToken}'});
-      if (response.statusCode == 200) {
+          headers: {
+            'Authorization': 'Bearer ${await authService.getAccessToken()}'
+          });
+
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
         final data = json.decode(response.body);
 
         setState(() {
@@ -86,13 +112,14 @@ class _ActivityDetailState extends State<ActivityDetail> {
             }
           }
           active = activity!.active;
+          if (activity!.dateTime.isBefore(DateTime.now())) {
+            aLaGorraActive = activity!.aLaGorra;
+          }
         });
       } else {
-        // Si la respuesta es un error, muestra un mensaje
         throw Exception('Failed to load places');
       }
     } catch (e) {
-      // Si ocurre un error en la solicitud
       print('Error: $e');
     }
   }
@@ -122,12 +149,12 @@ class _ActivityDetailState extends State<ActivityDetail> {
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
+            side: const BorderSide(
               color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
               width: 2, // ✅ Grosor del borde
             ), // ✅ Bordes redondeados
           ),
-          content: Text(
+          content: const Text(
               'Se te terminaron los planes gratuitos. Entra a esta página para más información xxxx'),
         ),
       );
@@ -142,12 +169,12 @@ class _ActivityDetailState extends State<ActivityDetail> {
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
+            side: const BorderSide(
               color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
               width: 2, // ✅ Grosor del borde
             ), // ✅ Bordes redondeados
           ),
-          content: Text(
+          content: const Text(
               'Necesitas tener un perfil de creador para poder activar planes pagos. Entra a este link y podrás configurarlo xxxx'),
         ),
       );
@@ -158,17 +185,17 @@ class _ActivityDetailState extends State<ActivityDetail> {
       showDialog(
         context: context,
         barrierDismissible: true,
-        barrierColor: Color.fromARGB(255, 1, 16, 79).withOpacity(0.5),
+        barrierColor: const Color.fromARGB(255, 1, 16, 79).withOpacity(0.5),
         builder: (context) => AlertDialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: BorderSide(
+            side: const BorderSide(
               color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
               width: 2, // ✅ Grosor del borde
             ), // ✅ Bordes redondeados
           ),
-          content: Text(
+          content: const Text(
               'Se te terminaron los planes de pago que puedes crear. Para ampliarlos, entra en el portal web: xxxx'),
         ),
       );
@@ -294,6 +321,12 @@ class _ActivityDetailState extends State<ActivityDetail> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (activity == null) {
       return Center(
@@ -306,10 +339,12 @@ class _ActivityDetailState extends State<ActivityDetail> {
     String formattedStartDate =
         DateFormat('EEEE, d \'de\' MMMM \'a las\' HH:mm ', 'es_ES')
             .format(activity!.dateTime);
+    print('activity deetail: ${activity!.created_by_user}');
     return Scaffold(
       appBar: AppBar(),
       body: Stack(children: [
         SingleChildScrollView(
+          controller: _scrollController,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 0.0),
             child: Container(
@@ -338,7 +373,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                                 fit: BoxFit.cover,
                               )
                             : Image.asset(
-                                'assets/solocarita.png',
+                                './assets/solocarita.png',
                                 fit: BoxFit.cover,
                               ),
                       ),
@@ -387,8 +422,8 @@ class _ActivityDetailState extends State<ActivityDetail> {
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: (active ?? false)
-                                    ? Colors.green
-                                    : Colors.red,
+                                    ? AppTheme.backgroundColor
+                                    : AppTheme.logo,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 24, vertical: 12),
@@ -397,7 +432,13 @@ class _ActivityDetailState extends State<ActivityDetail> {
                                   fontWeight: FontWeight.bold,
                                 ),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(20),
+                                  side: BorderSide(
+                                    color: (active ?? false)
+                                        ? AppTheme.logo
+                                        : AppTheme.backgroundColor,
+                                    width: 2,
+                                  ),
                                 ),
                               ),
                               onPressed: () {
@@ -407,6 +448,13 @@ class _ActivityDetailState extends State<ActivityDetail> {
                                 (active ?? false)
                                     ? 'EVENTO VISIBLE'
                                     : 'EVENTO NO VISIBLE',
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    fontFamily: 'BarlowCondensed',
+                                    color: (active ?? false)
+                                        ? AppTheme.logo
+                                        : Colors.white),
                               ),
                             )),
                       Positioned(
@@ -651,32 +699,116 @@ class _ActivityDetailState extends State<ActivityDetail> {
                         ),*/
                       ],
                       if (activity!.tickets_link != null) ...[
-                        Text(
+                        const Text(
                             'Las entradas para este evento se compran en una plataforma externa'),
                       ],
                       SizedBox(height: 20),
+                      if (aLaGorraActive == false)
+                        const Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                                textAlign: TextAlign.justify,
+                                'Este es un evento a la gorra. Podrás hacer tu aportación cuando haya empezado.',
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppTheme.logo))),
+                      const SizedBox(height: 20),
+                      if (aLaGorraActive == false) const SizedBox(height: 100),
+                      if (aLaGorraActive == true) ...[
+                        Container(
+                          height: 100,
+                          alignment: Alignment.centerLeft,
+                          child: const Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              'HACÉ TU APORTE: ',
+                              style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.logo),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20)
+                      ],
                       Row(
                         children: [
                           const Padding(
-                            padding: const EdgeInsets.all(8.0),
+                            padding: EdgeInsets.all(8.0),
                             child: Text(
                               'Este evento está organizado por: ',
-                              style:
-                                  TextStyle(fontSize: 20, color: Colors.black),
+                              style: TextStyle(
+                                fontSize: 20,
+                                color: AppTheme.logo,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                          CircleAvatar(
-                            child: activity!.creador!.asistenteImageUrl != null
-                                ? Image.network(
-                                    activity!.creador!.asistenteImageUrl!)
-                                : Image.asset(
-                                    'assets/solocarita.png',
-                                    fit: BoxFit.cover,
-                                  ),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => ProfileScreen(
+                                        foreignUserUuid:
+                                            activity!.creador!.uuid,
+                                        fromActivityDetail: true)),
+                              );
+                            },
+                            child: CircleAvatar(
+                              radius: 30, // puedes ajustar el tamaño
+                              backgroundImage: activity!
+                                          .creador!.asistenteImageUrl !=
+                                      null
+                                  ? NetworkImage(
+                                      activity!.creador!.asistenteImageUrl!)
+                                  : const AssetImage('assets/solocarita.png')
+                                      as ImageProvider,
+                              backgroundColor: Colors.transparent,
+                            ),
                           )
                         ],
                       ),
-                      SizedBox(height: 100),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              '¿Algo anduvo mal?',
+                              style: TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 15,
+                                  color: AppTheme.logo,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: AppTheme.naranja_light,
+                                  builder: (context) {
+                                    return ReportEventSheet(
+                                        event_uuid: activityUuid);
+                                  },
+                                );
+                              },
+                              child: const Text(
+                                ' Denunciá el evento!',
+                                style: TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 15,
+                                    color: AppTheme.logo),
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 80)
                     ]),
                     if (_showAsistentes)
                       Positioned.fill(
@@ -687,8 +819,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                               _showAsistentes = false;
                             });
                           },
-                          child:
-                              Container(), // debe haber algo aquí aunque sea vacío
+                          child: Container(),
                         ),
                       ),
                     if (_showAsistentes)
@@ -698,7 +829,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                         child: Container(
                           width: 180,
                           padding: EdgeInsets.all(0),
-                          constraints: BoxConstraints(
+                          constraints: const BoxConstraints(
                             maxHeight: 200, // límite vertical
                           ),
                           child: ListView.builder(
@@ -762,7 +893,90 @@ class _ActivityDetailState extends State<ActivityDetail> {
             ),
           ),
         ),
-
+        /*  if (aLaGorraActive == true)
+          Positioned(
+            bottom: 90,
+            right: 10,
+            child: GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: AppTheme.naranja_light,
+                  builder: (context) {
+                    return CreateALaGorraPaymentSheet(
+                      event_name: activity!.name,
+                      event_image: activity!.imageUrl,
+                      event_uuid: activity!.uuid,
+                      recommendedAmount:
+                          activity!.recommendedAmount, // función de compra
+                    );
+                  },
+                );
+              },
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.logo, width: 3),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/aLaGorra.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),*/
+        // Tu botón "A la Gorra"
+        if (aLaGorraActive == true)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+            bottom: _isAtBottom ? 250 : 90,
+            right: _isAtBottom ? 50 : 10,
+            child: GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: AppTheme.naranja_light,
+                  builder: (context) {
+                    return CreateALaGorraPaymentSheet(
+                      event_name: activity!.name,
+                      event_image: activity!.imageUrl,
+                      event_uuid: activity!.uuid,
+                      recommendedAmount: activity!.recommendedAmount,
+                    );
+                  },
+                );
+              },
+              child: Container(
+                width: _isAtBottom ? 120 : 100,
+                height: _isAtBottom ? 120 : 100,
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppTheme.logo, width: 3),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: ClipOval(
+                    child: Image.asset(
+                      './assets/aLaGorra.png',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
         // Overlay del GIF
         if (_isLoading)
           Container(
@@ -794,7 +1008,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
-                backgroundColor: const Color.fromARGB(235, 249, 129, 55),
+                backgroundColor: AppTheme.naranja_light,
                 builder: (context) {
                   return CreateReservaBottomSheet(
                     reservas_forms: activity!.reservas_forms!,
@@ -815,7 +1029,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
-                backgroundColor: const Color.fromARGB(235, 249, 129, 55),
+                backgroundColor: AppTheme.naranja_light,
                 builder: (context) {
                   return BuyTicketsBottomSheet(
                     activity: activity!,
@@ -844,7 +1058,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
               color: activity!.gratis!
                   ? _asistenciaController == true
                       ? Theme.of(context).colorScheme.primary.withOpacity(0.9)
-                      : Theme.of(context).colorScheme.primary.withOpacity(0.5)
+                      : AppTheme.naranja_light.withOpacity(0.7)
                   : _totalEntradas == 0
                       ? Theme.of(context).colorScheme.primary.withOpacity(0.5)
                       : Theme.of(context).colorScheme.primary.withOpacity(0.9),
@@ -860,14 +1074,18 @@ class _ActivityDetailState extends State<ActivityDetail> {
                     child: (_asistenciaController == true)
                         ? const Text('yendo!',
                             style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 30))
+                                color: AppTheme.backgroundColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 30))
                         : activity!.conReserva!
                             ? const Text('Haz tu reserva',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 30))
                             : const Text('GRATIS, vas a ir?',
                                 style: TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 30)))
+                                    color: AppTheme.logo,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 30)))
                 : (activity!.going! == true && _totalEntradas == 0)
                     ? const Center(
                         child: Text('ACCEDE A TUS ENTRADAS',

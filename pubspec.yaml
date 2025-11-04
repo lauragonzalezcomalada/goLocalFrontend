@@ -58,7 +58,7 @@ flutter:
 
   assets:
     # Add assets from the images directory to the application.
-    - assets/images/
+    - assets/aLaGorra.png
     - assets/boton_buenosaires.png
     - assets/boton_sol.png
     - assets/map_pin.png

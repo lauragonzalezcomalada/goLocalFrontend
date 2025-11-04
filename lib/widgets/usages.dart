@@ -46,19 +46,28 @@ void showLoginAlert(context, body_text) {
     barrierDismissible: false,
     barrierColor: Color.fromARGB(255, 1, 16, 79).withOpacity(0.5),
     builder: (context) => AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: Color.fromARGB(255, 1, 16, 79), // ✅ Color del borde
+          color: AppTheme.logo, // ✅ Color del borde
           width: 2, // ✅ Grosor del borde
         ), // ✅ Bordes redondeados
       ),
       title: Center(
           child: const Text(
-        'Identifícate',
+        'IDENTIFICATE',
+        style: TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.w900,
+            color: AppTheme.backgroundColor),
       )),
-      content: Text(body_text),
+      content: Text(
+        body_text,
+        style: const TextStyle(
+            fontSize: 20, fontWeight: FontWeight.w500, color: Colors.white),
+        textAlign: TextAlign.justify,
+      ),
       actions: [
         TextButton(
           onPressed: () {
@@ -71,9 +80,15 @@ void showLoginAlert(context, body_text) {
               );
             });
           },
-          child: const Text('Iniciar sesión', style: TextStyle(fontSize: 12)),
+          child: Center(
+            child: const Text('INICIAR SESIÓN',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.backgroundColor)),
+          ),
         ),
-        TextButton(
+        /* TextButton(
           onPressed: () {
             Navigator.of(context, rootNavigator: true).pop();
             Navigator.pushReplacement(
@@ -81,8 +96,8 @@ void showLoginAlert(context, body_text) {
                 MaterialPageRoute(
                     builder: (context) => const MainScaffold(initialIndex: 0)));
           },
-          child: const Text('Consultar planes', style: TextStyle(fontSize: 12)),
-        ),
+          child: const Text('CONSULTAR PLANES', style: TextStyle(fontSize: 12)),
+        ),*/
       ],
     ),
   );

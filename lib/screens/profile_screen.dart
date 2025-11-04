@@ -16,14 +16,17 @@ import 'package:provider/provider.dart';
 import 'package:worldwildprova/models_fromddbb/userprofile.dart';
 import 'package:worldwildprova/widgets/mainscaffold.dart';
 import 'package:worldwildprova/widgets/tagSelector.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? foreignUserUuid;
   final bool? notFromMainScaffold;
+  final bool? fromActivityDetail;
 
   ProfileScreen({
     this.foreignUserUuid,
     this.notFromMainScaffold,
+    this.fromActivityDetail,
     super.key,
   });
 
@@ -184,12 +187,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => SafeArea(
         child: Container(
-          /* decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: BoxBorder.all(
-                color: AppTheme.logo,
-                width: 2,
-              )),*/
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -283,7 +280,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+          actionsIconTheme: IconThemeData(color: AppTheme.logo),
+        ),
         /*AppBar(
           automaticallyImplyLeading: false,
           actions: [
@@ -555,90 +554,131 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.start,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Center(
-                          child: Container(
-                            width: 205,
-                            height: 205,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(context).colorScheme.primary,
-                                width: 5,
+                        if (widget.fromActivityDetail == true)
+                          Align(
+                            alignment: AlignmentGeometry.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 0.0),
+                              child: TextButton(
+                                child: Text(
+                                  'CONTACTÁNOS',
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800),
+                                ),
+                                onPressed: () async {
+                                  final email = userProfile?.email;
+                                  final subject = Uri.encodeComponent(
+                                      'Consulta sobre tu actividad');
+                                  final body = Uri.encodeComponent(
+                                      'Hola, quería consultarte sobre');
+
+                                  final mailtoLink = Uri(
+                                    scheme: 'mailto',
+                                    path: email,
+                                    query: 'subject=$subject&body=$body',
+                                  );
+
+                                  if (await canLaunchUrl(mailtoLink)) {
+                                    await launchUrl(mailtoLink);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text(
+                                              'No se pudo abrir la app de correo')),
+                                    );
+                                  }
+                                },
                               ),
                             ),
-                            child: ClipOval(
-                              child: itsMe
-                                  ? GestureDetector(
-                                      onTap:
-                                          (userProfile?.userImageUrl == null ||
-                                                  userProfile!
-                                                      .userImageUrl!.isEmpty)
-                                              ? _pickImage
-                                              : _showImageOptions,
-                                      child: Container(
-                                        width: 150,
-                                        height: 200,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
-                                          ),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          image: (userProfile?.userImageUrl !=
-                                                      null &&
-                                                  userProfile!
-                                                      .userImageUrl!.isNotEmpty)
-                                              ? DecorationImage(
-                                                  image: NetworkImage(
-                                                      userProfile
-                                                          .userImageUrl!),
-                                                  fit: BoxFit.cover,
-                                                )
-                                              : null,
-                                        ),
-                                        child: (userProfile?.userImageUrl ==
+                          ),
+                        Transform.translate(
+                          offset: const Offset(0, -10),
+                          child: Center(
+                            child: Container(
+                              width: 205,
+                              height: 205,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 5,
+                                ),
+                              ),
+                              child: ClipOval(
+                                child: itsMe
+                                    ? GestureDetector(
+                                        onTap: (userProfile?.userImageUrl ==
                                                     null ||
                                                 userProfile!
                                                     .userImageUrl!.isEmpty)
-                                            ? Center(
-                                                child: Icon(
-                                                  Icons.camera_alt,
-                                                  size: 40,
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .primary,
-                                                ),
-                                              )
-                                            : null,
-                                      ),
-                                    )
-                                  : Container(
-                                      width: 150,
-                                      height: 200,
-                                      decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .primary,
+                                            ? _pickImage
+                                            : _showImageOptions,
+                                        child: Container(
+                                          width: 150,
+                                          height: 200,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            image: (userProfile?.userImageUrl !=
+                                                        null &&
+                                                    userProfile!.userImageUrl!
+                                                        .isNotEmpty)
+                                                ? DecorationImage(
+                                                    image: NetworkImage(
+                                                        userProfile
+                                                            .userImageUrl!),
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : null,
                                           ),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          image: (userProfile?.userImageUrl !=
-                                                      null &&
+                                          child: (userProfile?.userImageUrl ==
+                                                      null ||
                                                   userProfile!
-                                                      .userImageUrl!.isNotEmpty)
-                                              ? DecorationImage(
-                                                  image: NetworkImage(
-                                                      userProfile
-                                                          .userImageUrl!),
-                                                  fit: BoxFit.cover,
+                                                      .userImageUrl!.isEmpty)
+                                              ? Center(
+                                                  child: Icon(
+                                                    Icons.camera_alt,
+                                                    size: 40,
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .primary,
+                                                  ),
                                                 )
-                                              : const DecorationImage(
-                                                  image: AssetImage(
-                                                      'assets/solocarita.png'),
-                                                  fit: BoxFit.cover))),
+                                              : null,
+                                        ),
+                                      )
+                                    : Container(
+                                        width: 150,
+                                        height: 200,
+                                        decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            image: (userProfile?.userImageUrl !=
+                                                        null &&
+                                                    userProfile!.userImageUrl!
+                                                        .isNotEmpty)
+                                                ? DecorationImage(
+                                                    image: NetworkImage(
+                                                        userProfile
+                                                            .userImageUrl!),
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : const DecorationImage(
+                                                    image: AssetImage(
+                                                        'assets/solocarita.png'),
+                                                    fit: BoxFit.cover))),
+                              ),
                             ),
                           ),
                         ),
@@ -731,12 +771,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Text('+  Añade tus tags')),
                         SizedBox(height: 10),
                         if (userProfile.eventos!.isEmpty)
-                          Stack(children: [
+                          /*Stack(children: [
                             SizedBox(
                                 height: 200,
                                 child: PageView.builder(
                                     controller: pageController,
-                                    itemCount: 5,
+                                    itemCount: 6,
                                     padEnds: false,
                                     itemBuilder: (context, index) {
                                       return SizedBox(
@@ -746,14 +786,81 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               15), // Bordes redondeados
                                         ),
                                         elevation: 5,
-                                        child: Center(
-                                          child: Text(
-                                            '¿?',
-                                            style: TextStyle(
-                                                fontSize: 40,
-                                                color: Colors.blueAccent),
-                                          ),
-                                        ),
+                                        child: index % 2 == 0
+                                            ? Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    'Encue',
+                                                    style: TextStyle(
+                                                        fontSize: 40,
+                                                        color: AppTheme.logo,
+                                                        fontWeight:
+                                                            FontWeight.w800),
+                                                  ),
+                                                  Text(
+                                                    'tus',
+                                                    style: TextStyle(
+                                                        fontSize: 40,
+                                                        color: AppTheme.logo,
+                                                        fontWeight:
+                                                            FontWeight.w800),
+                                                  ),
+                                                  Text(
+                                                    'pla',
+                                                    style: TextStyle(
+                                                        fontSize: 40,
+                                                        color: AppTheme.logo,
+                                                        fontWeight:
+                                                            FontWeight.w800),
+                                                  )
+                                                ],
+                                              )
+                                            : Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    'ntra',
+                                                    style: TextStyle(
+                                                        fontSize: 40,
+                                                        color: AppTheme.logo,
+                                                        fontWeight:
+                                                            FontWeight.w800),
+                                                  ),
+                                                  Text(
+                                                    'primeros',
+                                                    style: TextStyle(
+                                                        fontSize: 40,
+                                                        color: AppTheme.logo,
+                                                        fontWeight:
+                                                            FontWeight.w800),
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        'nes',
+                                                        style: TextStyle(
+                                                            fontSize: 40,
+                                                            color:
+                                                                AppTheme.logo,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .w800),
+                                                      ),
+                                                      Image.asset(
+                                                        './assets/solocarita.png',
+                                                        width: 50,
+                                                      )
+                                                    ],
+                                                  )
+                                                ],
+                                              ),
                                       ));
                                     })),
                             Positioned.fill(
@@ -775,27 +882,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     );
                                   },
                                   child: const Text(
-                                    'encuentra tus primeros planes',
+                                    '',
                                     style: TextStyle(fontSize: 20),
                                   ),
                                 ),
                               ),
                             ),
-                          ])
+                          ])*/
+
+                          SizedBox(
+                            height: 150,
+                            child: Card(
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    const Text(
+                                      'ENCONTRÁ TU PRIMER PLAN!',
+                                      style: TextStyle(
+                                          fontSize: 30,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppTheme.logo),
+                                    ),
+                                    IconButton(
+                                        onPressed: () {
+                                          Navigator.pushAndRemoveUntil(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const SecondScreen(
+                                                placeName: 'Buenos Aires',
+                                                placeUuid:
+                                                    '0cffbdd2-c0ce-4b6d-94a3-0bb7e2123c1f',
+                                                fromMainScaffold: false,
+                                              ),
+                                            ),
+                                            (route) => false,
+                                          );
+                                        },
+                                        icon: const Icon(
+                                          Icons.add,
+                                          color: AppTheme.logo,
+                                          size: 40,
+                                        )),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
                         else ...[
-                          Row(
+                          const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              const Text(
+                              Text(
                                 'EVENTOS ASISTIDOS',
                                 style: TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w600,
                                     color: AppTheme.logo),
                               ),
-                              const SizedBox(
-                                  width: 8), // espacio entre texto y línea
+                              SizedBox(width: 8), // espacio entre texto y línea
                               Expanded(
                                 child: Divider(
                                   color: AppTheme.logo,
@@ -804,7 +952,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ],
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           SizedBox(
                             height: 300, // o el alto que necesites
                             child: PageView.builder(
@@ -900,6 +1048,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               },
                             ),
                           ),
+                          SizedBox(height: 20)
                         ]
                       ],
                     ),

@@ -41,6 +41,12 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>La aplicación necesita acceder a tu ubicación mientras la usas para mostrar lugares cercanos y mejorar tu experiencia.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>La aplicación necesita acceder a tu ubicación incluso en segundo plano para ofrecerte información relevante según tu posición.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Necesitamos acceder a tu galería para que puedas seleccionar imágenes desde tu dispositivo.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

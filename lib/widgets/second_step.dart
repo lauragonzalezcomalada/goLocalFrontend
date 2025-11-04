@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/text_form_field_customized.dart';
 
 class SecondStep extends StatefulWidget {
@@ -58,7 +59,13 @@ class _SecondStepState extends State<SecondStep> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Cambiar imagen'),
+              title: const Text(
+                'CAMBIAR IMAGEN',
+                style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                    color: AppTheme.logo),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage();
@@ -66,7 +73,13 @@ class _SecondStepState extends State<SecondStep> {
             ),
             ListTile(
               leading: const Icon(Icons.delete),
-              title: const Text('Eliminar imagen'),
+              title: const Text(
+                'ELIMINAR IMAGEN',
+                style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                    color: AppTheme.logo),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _removeImage();
@@ -138,10 +151,10 @@ class _SecondStepState extends State<SecondStep> {
                       controller: widget.descriptionController,
                       fieldKey: _descriptionFieldKey,
                       focusNode: _focusDescriptionNode,
-                      labelText: 'Cuentanos sobre ti!',
+                      labelText: 'CONTÁNOS UN POCO SOBRE VOS!',
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Aunque solo sea una palabra...';
+                          return 'Daaaalee...';
                         }
                         return null;
                       }),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:worldwildprova/models_fromddbb/activity.dart';
 import 'package:worldwildprova/models_fromddbb/userprofile.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 
 class BuyTicketsBottomSheet extends StatelessWidget {
@@ -54,9 +55,11 @@ class BuyTicketsBottomSheet extends StatelessWidget {
                       children: [
                         const SizedBox(height: 12),
                         const Text(
-                          'Quieres confirmar tu compra para...',
+                          'QUERÉS CONFIRMAR TU COMPRA PARA...',
                           style: TextStyle(
-                              fontSize: 50, fontWeight: FontWeight.bold),
+                              fontSize: 40,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.logo),
                         ),
                         const SizedBox(height: 20),
                         Container(

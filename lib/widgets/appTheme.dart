@@ -5,8 +5,9 @@ class AppTheme {
   static const Color fucsia = Color.fromRGBO(250, 57, 211, 1);
   static const Color logo = Color.fromRGBO(250, 80, 57, 1);
   static const Color naranja_strong = Color.fromRGBO(250, 114, 57, 1);
-  static const Color rosa = const Color.fromRGBO(250, 62, 100, 1);
-  static const Color cardColor = const Color.fromRGBO(252, 110, 75, 0.966);
+  static const Color rosa = Color.fromRGBO(250, 62, 100, 1);
+  static const Color cardColor = Color.fromRGBO(252, 110, 75, 0.966);
+  static const Color backgroundColor = Color.fromRGBO(254, 237, 235, 1);
 
   static ThemeData lightTheme = ThemeData(
       brightness: Brightness.light,
@@ -19,4 +20,10 @@ class AppTheme {
         secondary: const Color.fromRGBO(250, 147, 57, 1),
       ),
       useMaterial3: true);
+
+  static const errorFieldStyle = TextStyle(
+    color: AppTheme.logo,
+    fontSize: 16,
+    fontWeight: FontWeight.bold,
+  );
 }

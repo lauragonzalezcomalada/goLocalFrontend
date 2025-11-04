@@ -4,6 +4,7 @@ import 'package:mime/mime.dart';
 import 'package:worldwildprova/config.dart';
 import 'package:worldwildprova/screens/profile_screen.dart';
 import 'package:worldwildprova/screens/log_in_screen.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 
 import 'package:worldwildprova/widgets/usages.dart';
 import 'package:flutter/material.dart';
@@ -31,20 +32,21 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   //fields controllers
   //First Step
-  final TextEditingController _birthdayController = TextEditingController();
+  /* final TextEditingController _birthdayController = TextEditingController();
   final TextEditingController _placeController = TextEditingController();
-  String? _selectedPlaceId;
+  String? _selectedPlaceId;*/
+  bool asCreator = false;
   //Second Step
   final TextEditingController _descriptionController = TextEditingController();
   File? _selectedImage;
   //Third Step
   List<int> _selectedTags = []; // Aquí almacenamos los tags seleccionados
 
-  void _updateSelectedPlaceId(String placeId) {
+  /*void _updateSelectedPlaceId(String placeId) {
     setState(() {
       _selectedPlaceId = placeId;
     });
-  }
+  }*/
 
   void _updateSelectedImage(File imageFile) {
     setState(() {
@@ -58,75 +60,49 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
   }
 
-  bool formValidate() {
-    bool result = true;
-
-    if (_birthdayController.text.isEmpty ||
-        _placeController.text.isEmpty ||
-        _descriptionController.text.isEmpty) {
-      result = false;
-    }
-    return result;
+  void _handleAsCreatorChange() {
+    setState(() {
+      asCreator = !asCreator;
+    });
   }
 
   void _showValues() async {
-    if (formValidate() == false) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Center(child: const Text('¡⚠️!')),
-          contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 0.0),
-          content: const Text(
-            'veo que hay unos campos que no completaste aún...',
-            textAlign: TextAlign.center,
-          ),
-          actionsAlignment: MainAxisAlignment.center, // <-- centra los botones
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
+    var updateUserUri = Uri.parse('${Config.serverIp}/actualizar_usuario/');
+
+    var request = http.MultipartRequest('POST', updateUserUri);
+    request.fields['asCreator'] = asCreator.toString();
+    request.fields['user_uuid'] = widget.userUuid;
+    request.fields['description'] = _descriptionController.text;
+
+    //  final birthdayDate = convertirFecha(_birthdayController.text);
+    //   request.fields['birthday_date'] = birthdayDate;
+    // request.fields['place_location'] = _placeController.text;
+    //  request.fields['place_location_id'] = _selectedPlaceId!;
+    request.fields['tags'] = jsonEncode(_selectedTags);
+
+    if (_selectedImage != null) {
+      final mimeType = lookupMimeType(_selectedImage!.path) ?? 'image/jpeg';
+
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'image',
+          _selectedImage!.path,
+          contentType: MediaType.parse(mimeType),
         ),
       );
-      return;
+    }
+    final response = await request.send();
+
+    if (response.statusCode == 200) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+            builder: (context) => LogInScreen(comingFromOnboarding: true)),
+        (Route<dynamic> route) => false,
+      );
     } else {
-      var updateUserUri = Uri.parse('${Config.serverIp}/actualizar_usuario/');
-
-      var request = http.MultipartRequest('POST', updateUserUri);
-      request.fields['user_uuid'] = widget.userUuid;
-      request.fields['description'] = _descriptionController.text;
-
-      final birthdayDate = convertirFecha(_birthdayController.text);
-      request.fields['birthday_date'] = birthdayDate;
-      request.fields['place_location'] = _placeController.text;
-      request.fields['place_location_id'] = _selectedPlaceId!;
-      request.fields['tags'] = jsonEncode(_selectedTags);
-
-      if (_selectedImage != null) {
-        final mimeType = lookupMimeType(_selectedImage!.path) ?? 'image/jpeg';
-
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'image',
-            _selectedImage!.path,
-            contentType: MediaType.parse(mimeType),
-          ),
-        );
-      }
-      final response = await request.send();
-
-      if (response.statusCode == 200) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-              builder: (context) => LogInScreen(comingFromOnboarding: true)),
-          (Route<dynamic> route) => false,
-        );
-      } else {
-        print('Error al crear plan: ${response.statusCode}');
-        print(await response.stream.bytesToString());
-      }
+      print('Error al crear plan: ${response.statusCode}');
+      print(await response.stream.bytesToString());
     }
   }
 
@@ -134,11 +110,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       FirstStep(
-        birthdayController: _birthdayController,
+          /* birthdayController: _birthdayController,
         placeController: _placeController,
         selectedPlaceId: _selectedPlaceId,
-        onPlaceSelected: _updateSelectedPlaceId,
-      ),
+        onPlaceSelected: _updateSelectedPlaceId,*/
+          asCreator: asCreator,
+          asCreatorChange: _handleAsCreatorChange),
       SecondStep(
           descriptionController: _descriptionController,
           updateImage: _updateSelectedImage),
@@ -147,7 +124,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bienvenido ${widget.name}!'),
+        title: Text(
+          'BIENVENIDO ${widget.name}!',
+          style: TextStyle(
+              fontSize: 30, fontWeight: FontWeight.w800, color: AppTheme.logo),
+        ),
       ),
       body: Form(
         key: _formKey,
@@ -169,7 +150,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                    child: const Text('Lo hago luego!'),
+                    child: const Text(
+                      'LO HAGO LUEGO!',
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                    ),
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(
                         context,
@@ -190,11 +175,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   TextButton(
-                      child: Text(isLastPage ? 'Finalizar' : ''),
+                      child: Text(
+                        isLastPage ? 'FINALIZAR' : '',
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.w800),
+                      ),
                       onPressed: () {
                         if (isLastPage) {
                           _showValues();
-                          // Ir a la pantalla principal o continuar el flujo
                         } else {
                           _controller.nextPage(
                             duration: const Duration(milliseconds: 300),

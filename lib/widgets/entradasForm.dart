@@ -67,7 +67,6 @@ class _EntradasFormState extends State<EntradasForm> {
       crossAxisAlignment: CrossAxisAlignment.center,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Lista de entradas
         for (var entrada in entradas)
           Container(
             margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 16),
@@ -98,12 +97,11 @@ class _EntradasFormState extends State<EntradasForm> {
               ],
             ),
           ),
-
         if (!mostrarNuevaEntrada)
           GestureDetector(
             onTap: () => setState(() => mostrarNuevaEntrada = true),
             child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
+              margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 30),
               padding: const EdgeInsets.symmetric(vertical: 20),
               width: MediaQuery.of(context).size.width * 0.8,
               decoration: BoxDecoration(
@@ -111,15 +109,14 @@ class _EntradasFormState extends State<EntradasForm> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: Colors.grey),
               ),
-              child: Column(
-                children: const [
+              child: const Column(
+                children: [
                   Icon(Icons.add, size: 30),
                   Text('Crear nueva entrada', style: TextStyle(fontSize: 16)),
                 ],
               ),
             ),
           ),
-
         if (mostrarNuevaEntrada)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

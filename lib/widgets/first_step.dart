@@ -3,30 +3,34 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/date_input_formatter.dart';
 import 'package:worldwildprova/widgets/text_form_field_customized.dart';
 
 // ignore: must_be_immutable
 class FirstStep extends StatefulWidget {
-  late TextEditingController birthdayController;
+  /* late TextEditingController birthdayController;
   late TextEditingController placeController;
   late String? selectedPlaceId;
-  final void Function(String) onPlaceSelected;
+  final void Function(String) onPlaceSelected;*/
+  final void Function() asCreatorChange;
+  late bool asCreator;
 
-  FirstStep({
-    super.key,
-    required this.birthdayController,
+  FirstStep(
+      {super.key,
+      /*required this.birthdayController,
     required this.placeController,
     this.selectedPlaceId,
-    required this.onPlaceSelected,
-  });
+    required this.onPlaceSelected,*/
+      required this.asCreator,
+      required this.asCreatorChange});
 
   @override
   State<FirstStep> createState() => _FirstStepState();
 }
 
 class _FirstStepState extends State<FirstStep> {
-  final GlobalKey<FormFieldState> _birthdayFieldKey =
+  /*final GlobalKey<FormFieldState> _birthdayFieldKey =
       GlobalKey<FormFieldState>();
   final GlobalKey<FormFieldState> _locationFieldKey =
       GlobalKey<FormFieldState>();
@@ -71,10 +75,11 @@ class _FirstStepState extends State<FirstStep> {
       return direction;
     }
     return null;
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
+    print('valor: ${widget.asCreator}');
     return Padding(
       padding: const EdgeInsets.fromLTRB(30.0, 0.0, 30.0, 0.0),
       child: Container(
@@ -85,14 +90,38 @@ class _FirstStepState extends State<FirstStep> {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16), // Bordes redondeados
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextFormFieldCustomized(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Row(
+            children: [
+              Transform.scale(
+                scale: 1.5,
+                child: Checkbox(
+                  value: widget.asCreator == true,
+                  onChanged: (bool? value) {
+                    widget.asCreatorChange();
+                  },
+                  activeColor: AppTheme.logo,
+                  checkColor: Colors.white,
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  '¿Querés registrarte como creador de eventos?',
+                  softWrap: true,
+                  style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.logo),
+                ),
+              )
+            ],
+          )
+        ]
+            /*TextFormFieldCustomized(
               controller: widget.birthdayController,
               fieldKey: _birthdayFieldKey,
               focusNode: _focusBirthdayNode,
-              labelText: 'Fecha de nacimiento',
+              labelText: 'FECHA DE NACIMIENTO',
               hintText: 'dd/mm/yyyy',
               inputFormatters: [DateInputFormatter()],
               validator: (value) {
@@ -105,7 +134,7 @@ class _FirstStepState extends State<FirstStep> {
                 }
               },
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextFormFieldCustomized(
               controller: widget.placeController,
               fieldKey: _locationFieldKey,
@@ -130,8 +159,8 @@ class _FirstStepState extends State<FirstStep> {
                     setState(() {});
                   },
                 )),
-          ],
-        ),
+          ],*/
+            ),
       ),
     );
   }

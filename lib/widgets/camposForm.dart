@@ -66,8 +66,13 @@ class _CamposFormState extends State<CamposForm> {
               .toList(),
           onChanged: (c) => setState(() => campoSeleccionado = c),
         ),
-        SizedBox(height: 5),
-        ElevatedButton(onPressed: agregarCampo, child: Text('Añadir campo')),
+        SizedBox(height: 10),
+        ElevatedButton(
+            onPressed: agregarCampo,
+            child: Text(
+              'AÑADIR CAMPO',
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+            )),
       ],
     );
   }

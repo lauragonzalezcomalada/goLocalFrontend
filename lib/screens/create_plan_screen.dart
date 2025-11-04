@@ -83,6 +83,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   //final TextEditingController _priceController = TextEditingController();
   final TextEditingController _urlEntradas = TextEditingController();
   final TextEditingController _placeController = TextEditingController();
+  bool _placeSelectedError = false;
   List<int> _selectedTags = [];
   List<Tag> _allTags = [];
   DateTime? _selectedDateTime;
@@ -234,6 +235,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     _shortDescriptionController.clear();
     _descriptionController.clear();
     _urlEntradas.clear();
+    _placeController.clear();
+    _suggestions.clear();
 
     setState(() {
       _selectedPlaceId = null;
@@ -254,7 +257,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       _selectedReservaOption = null;
       entradasGuardadas = [];
       reservasGuardadas = [];
-      _placeController.clear();
+      _selectedImage = null;
     });
     final token = await userToken;
     if (token == null) {
@@ -321,12 +324,14 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     bool other_errors = false;
     bool? form_controllers_validate = _formKey.currentState?.validate();
     if (_selectedDateTime == null) {
+      print('error de no date');
       setState(() {
         _showDateTimeError = true;
       });
       other_errors = true;
     }
     if (_selectedGratisOption == null) {
+      print('error de gratis option');
       setState(() {
         _showGratisError = true;
       });
@@ -336,6 +341,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     if (_selectedGratisOption != null &&
         _selectedGratisOption == true &&
         _selectedReservaOption == null) {
+      print('error de reserva option');
       setState(() {
         _showReservaError = true;
       });
@@ -344,6 +350,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
     //ERROR DE SI RESERVA = TRUE PERÒ NO HI HA RESERVES
     if (_selectedReservaOption == true && reservasGuardadas.isEmpty) {
+      print('error de no reservas');
       setState(() {
         _showReservaError = true;
       });
@@ -351,6 +358,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     }
 
     if (_selectedEntradasOption == true && entradasGuardadas.isEmpty) {
+      print('error de no entradas');
       setState(() {
         _showEntradasError = true;
       });
@@ -358,6 +366,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     }
 
     if (_selectedPromo == true && _selectedEndDateTime == null) {
+      print('error de no end date');
       setState(() {
         _showNoEndDateTimeError = true;
       });
@@ -366,6 +375,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     if (_selectedPromo == true &&
         _selectedEndDateTime != null &&
         _selectedEndDateTime!.isBefore(_selectedDateTime!)) {
+      print('error de no date');
       setState(() {
         _showInvalidEndDateTimeError = true;
       });
@@ -377,7 +387,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
         _selectedPrivatePlan == false) {
       other_errors = true;
     }
+
     var result = !(other_errors) && (form_controllers_validate ?? false);
+
     return result;
   }
 
@@ -386,6 +398,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       var createActivityUri = Uri.parse('${Config.serverIp}/createevent/');
 
       var request = http.MultipartRequest('POST', createActivityUri);
+      print('tot okay aquí');
       final token = await userToken;
       request.headers['Authorization'] = 'Bearer $token';
       request.fields['name'] = _titleController.text;
@@ -434,6 +447,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
           request.fields['tipoEvento'] = '1';
           request.fields['endDateandtime'] =
               _selectedEndDateTime!.toIso8601String();
+          print(request.fields['endDateandtime']);
 
         case PlanType.private:
           request.fields['tipoEvento'] = '2';
@@ -452,15 +466,30 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       }
 
       var response = await request.send();
+      print('response status: ${response.statusCode}');
+      print('response body: ${response.reasonPhrase}');
       if (response.statusCode == 401) {
+        print('aquí dins');
         await authService.refreshAccessToken();
         String? newAccessToken = await authService.getAccessToken();
         if (newAccessToken == null) return;
+        print('new access token: $newAccessToken');
         final newRequest = http.MultipartRequest(request.method, request.url);
         newRequest.fields.addAll(request.fields);
-        newRequest.files.addAll(request.files);
         newRequest.headers.addAll(request.headers);
         newRequest.headers['Authorization'] = 'Bearer $newAccessToken';
+
+        if (_selectedImage != null) {
+          final mimeType = lookupMimeType(_selectedImage!.path) ?? 'image/jpeg';
+          newRequest.files.add(
+            await http.MultipartFile.fromPath(
+              'image',
+              _selectedImage!.path,
+              contentType: MediaType.parse(mimeType),
+            ),
+          );
+        }
+
         response = await newRequest.send();
       }
       if (response.statusCode == 201) {
@@ -470,16 +499,31 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
-              content: const Text("¡Creáste tu plan 🎉!"),
+              content: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.3,
+                child: const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "¡CREÁSTE TU EVENTO!",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontSize: 50,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.logo),
+                    ),
+                  ],
+                ),
+              ),
               actions: [
                 TextButton(
-                  child: const Text("Ver mi plan"),
+                  child: const Text(
+                    "¡ACTIVÁLO!",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                  ),
                   onPressed: () {
                     var response = jsonDecode(resp);
-                    print('response del crear plan: ${response["uuid"]}');
-                    print('user token al crear plan: ${userToken!}');
                     if (response['tipo'] == 0) {
-                      print('tipo 0');
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -490,7 +534,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         (route) => false,
                       );
                     } else if (response['tipo'] == 1) {
-                      print('tupo 1');
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -501,7 +544,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         (route) => false,
                       );
                     } else {
-                      print('tipo 2');
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -512,15 +554,16 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                         (route) => false,
                       );
                     }
-
-                    //  Navigator.of(context).pop(); // Cierra el dialog
                   },
                 ),
                 TextButton(
-                  child: const Text("Crear otro"),
+                  child: const Text(
+                    "CREAR NUEVO",
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                  ),
                   onPressed: () {
                     _resetForm();
-                    Navigator.of(context).pop(); // Cierra el dialog
+                    Navigator.of(context).pop();
                   },
                 ),
               ],
@@ -533,7 +576,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     }
   }
 
-  Future<void> _searchUsers(String query) async {
+  /*Future<void> _searchUsers(String query) async {
     if (query.isEmpty) {
       setState(() => _searchResults = []);
       return;
@@ -559,7 +602,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
         _isLoading = false;
       });
     }
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -570,7 +613,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
     if (_selectedPlan == false && _selectedEndDateTime != null) {
       formattedStartDate +=
-          ' - ' + DateFormat('HH:mm', 'es_ES').format(_selectedEndDateTime!);
+          ' - ${DateFormat('HH:mm', 'es_ES').format(_selectedEndDateTime!)}';
     }
 
     String formattedEndDate = _selectedEndDateTime != null
@@ -642,6 +685,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                   _selectedPromo = false;
                                   _selectedPrivatePlan = false;
                                   _selectedPlan = true;
+                                  _selectedDateTime = null;
+                                  _selectedEndDateTime = null;
                                 });
                               },
                             ),
@@ -659,6 +704,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                   _selectedPrivatePlan = false;
                                   _selectedPromo = true;
                                   _selectedGratisOption = true;
+                                  _selectedDateTime = null;
+                                  _selectedEndDateTime = null;
                                 });
                               },
                             ),
@@ -678,6 +725,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                   _selectedGratisOption = true;
                                   _selectedReservaOption = false;
                                   _selectedEntradasOption = null;
+                                  _selectedDateTime = null;
+                                  _selectedEndDateTime = null;
                                 });
                               },
                             ),
@@ -691,6 +740,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           controller: _titleController,
                           decoration: InputDecoration(
                             hintText: 'Título',
+                            errorStyle: AppTheme.errorFieldStyle,
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                   color: Colors.black,
@@ -719,6 +769,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           controller: _shortDescriptionController,
                           decoration: InputDecoration(
                             hintText: 'Pequeña descripción',
+                            errorStyle: AppTheme.errorFieldStyle,
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                   color: Colors.black,
@@ -744,6 +795,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               fontSize: 20, fontWeight: FontWeight.w500),
                           decoration: InputDecoration(
                             hintText: 'Descripción',
+                            errorStyle: AppTheme.errorFieldStyle,
                             enabledBorder: OutlineInputBorder(
                               borderSide: BorderSide(
                                   color: Colors.black,
@@ -862,12 +914,11 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               Text(
                                 'Vender entradas con GoLocal?   ',
                                 style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w500),
+                                    fontSize: 19, fontWeight: FontWeight.w500),
                               ),
                               const Text(
                                 'Sí',
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w400),
+                                style: TextStyle(fontSize: 20),
                               ),
                               Radio<bool>(
                                 value: true,
@@ -882,8 +933,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               ),
                               const Text(
                                 'No',
-                                style: TextStyle(
-                                    fontSize: 20, fontWeight: FontWeight.w400),
+                                style: TextStyle(fontSize: 20),
                               ),
                               Radio<bool>(
                                 value: false,
@@ -893,6 +943,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                     _selectedEntradasOption = value;
                                     _showEntradasError =
                                         false; // Quita el error si selecciona
+                                    _urlEntradas.clear();
                                   });
                                 },
                               ),
@@ -954,8 +1005,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           EntradasForm(
                             onEntradasChanged: (entradas) {
                               setState(() {
-                                entradasGuardadas =
-                                    entradas; // actualizamos lista en el padre
+                                entradasGuardadas = entradas;
                               });
                             },
                           ),
@@ -966,26 +1016,27 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                             onReservasChanged: (reservas) {
                               setState(() {
                                 reservasGuardadas = reservas;
-                              }); // actualizamos lista en el padre
+                              });
                             },
                           ),
                           SizedBox(height: 20)
                         ],
 
                         TextFormField(
-                          style: TextStyle(
+                          style: const TextStyle(
                               fontSize: 20, fontWeight: FontWeight.w500),
                           controller: _placeController,
                           decoration: InputDecoration(
                             hintText: 'Lugar',
+                            errorStyle: AppTheme.errorFieldStyle,
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
+                              borderSide: const BorderSide(
                                   color: Colors.black,
                                   width: 1.5), // borde normal
                               borderRadius: BorderRadius.circular(8),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(
+                              borderSide: const BorderSide(
                                   color: Colors.black,
                                   width: 3), // borde al enfocar
                               borderRadius: BorderRadius.circular(8),
@@ -993,6 +1044,12 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           ),
                           onChanged: (value) {
                             _getPlaceSuggestions(value);
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Por favor ingresa un lugar';
+                            }
+                            return null;
                           },
                         ),
 
@@ -1127,14 +1184,23 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                         color: AppTheme.logo, width: 2),
                                   ),
                                 ),
-                                backgroundColor:
-                                    WidgetStateProperty.all(Colors.transparent),
+                                backgroundColor: _showDateTimeError == true
+                                    ? MaterialStateProperty.all(AppTheme.logo)
+                                    : WidgetStateProperty.all(
+                                        Colors.transparent),
                               ),
                               onPressed: pickStartDateTime,
-                              child: const Text(
-                                ' Seleccionar fecha y hora ',
+                              child: Text(
+                                'Seleccionar fecha y hora' +
+                                    (_showDateTimeError == true
+                                        ? ' (Necesario) '
+                                        : ''),
                                 style: TextStyle(
-                                    fontWeight: FontWeight.w800, fontSize: 20),
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 20,
+                                    color: _showDateTimeError == true
+                                        ? Colors.white
+                                        : AppTheme.logo),
                               ),
                             ),
                           ),
@@ -1143,28 +1209,30 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(formattedStartDate,
-                                    style: const TextStyle(
-                                        fontSize: 20,
+                                    style: TextStyle(
+                                        fontSize:
+                                            _selectedPromo == true ? 18 : 20,
                                         fontWeight: FontWeight.w800,
                                         color: AppTheme.logo)),
                                 const SizedBox(width: 15),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: AppTheme.logo, // color del borde
-                                      width: 2, // grosor
+                                if (_selectedPromo == false)
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppTheme.logo, // color del borde
+                                        width: 2, // grosor
+                                      ),
+                                      borderRadius: BorderRadius.circular(18.0),
                                     ),
-                                    borderRadius: BorderRadius.circular(18.0),
-                                  ),
-                                  child: IconButton(
-                                    onPressed: pickStartDateTime,
-                                    icon: Image.asset(
-                                      'assets/pincel3.png',
-                                      height: 24,
-                                      width: 24,
+                                    child: IconButton(
+                                      onPressed: pickStartDateTime,
+                                      icon: Image.asset(
+                                        'assets/pincel3.png',
+                                        height: 24,
+                                        width: 24,
+                                      ),
                                     ),
-                                  ),
-                                )
+                                  )
                               ]),
                         /* Row(
                           mainAxisAlignment: _selectedDateTime == null
@@ -1207,33 +1275,49 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                           Row(
                             mainAxisAlignment: _selectedEndDateTime == null
                                 ? MainAxisAlignment.center
-                                : MainAxisAlignment.end,
+                                : MainAxisAlignment.spaceAround,
                             children: [
-                              SizedBox(
-                                height: 60,
-                                width: 200,
-                                child: TextButton(
-                                    style: ButtonStyle(
-                                      backgroundColor: MaterialStateProperty
-                                          .resolveWith<Color>((states) {
-                                        if (_selectedEndDateTime == null) {
-                                          return Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.8);
-                                        }
-                                        return Theme.of(context)
-                                            .colorScheme
-                                            .secondary
-                                            .withOpacity(
-                                                0.2); // fondo normal sin selección
-                                      }),
+                              if (_selectedEndDateTime != null)
+                                Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 5, horizontal: 8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.transparent,
+                                      borderRadius: BorderRadius.circular(18.0),
+                                      border: Border.all(
+                                        color: AppTheme.logo,
+                                        width: 2,
+                                      ),
                                     ),
-                                    onPressed: pickEndDateTime,
-                                    child: Text(_selectedEndDateTime == null
-                                        ? 'Seleccionar hora de fin'
-                                        : 'Cambiar hora de fin')),
-                              )
+                                    child: Text('Cambiar fecha',
+                                        style: TextStyle(
+                                          color: AppTheme.logo,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 20,
+                                        ))),
+                              TextButton(
+                                  style: ButtonStyle(
+                                    shape: WidgetStateProperty.all<
+                                        RoundedRectangleBorder>(
+                                      RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(18.0),
+                                        side: const BorderSide(
+                                            color: AppTheme.logo, width: 2),
+                                      ),
+                                    ),
+                                    backgroundColor: WidgetStateProperty.all(
+                                        Colors.transparent),
+                                  ),
+                                  onPressed: pickEndDateTime,
+                                  child: Text(
+                                      _selectedEndDateTime == null
+                                          ? 'Seleccionar hora de fin'
+                                          : 'Cambiar hora de fin',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 20,
+                                      )))
                               // o formatear bonito con intl
                               ,
                               if (_showNoEndDateTimeError == true)
@@ -1250,7 +1334,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 )
                             ],
                           ),
-                        if (_selectedPrivatePlan == true)
+                        /* if (_selectedPrivatePlan == true)
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1341,7 +1425,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 )
                             ],
                           ),
-
+*/
                         Text(
                           'Previsualización del plan',
                           style: TextStyle(
@@ -1349,7 +1433,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                               color: AppTheme.logo,
                               fontWeight: FontWeight.w600),
                         ),
-                        SizedBox(height: 10),
+                        SizedBox(height: 20),
                         ConstrainedBox(
                           constraints: BoxConstraints(minHeight: 220),
                           child: Container(

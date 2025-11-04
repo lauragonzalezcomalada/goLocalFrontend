@@ -22,13 +22,13 @@ class Activity extends ListableItem implements Evento {
   final bool? tiene_tickets;
   @override
   final bool? active;
-
   final String? shortDesc;
   final String? desc;
   final String? placeName;
   final List<Tag>? tags;
   final bool? gratis;
-  final double? price;
+  final bool? aLaGorra;
+  final double? recommendedAmount;
   final String? activityCreatorImageUrl;
   late bool? going;
   final double? lat;
@@ -60,7 +60,8 @@ class Activity extends ListableItem implements Evento {
       this.lat,
       this.long,
       this.direccion,
-      this.price,
+      this.aLaGorra,
+      this.recommendedAmount,
       this.conReserva,
       this.entradas,
       this.tiene_tickets,
@@ -94,6 +95,7 @@ class Activity extends ListableItem implements Evento {
   }
   // Método para convertir el JSON recibido en un objeto Activity para dar los detalles
   factory Activity.fromServerJson(Map<String, dynamic> json) {
+    print('json de lactivity detail $json');
     return Activity(
         uuid: json['uuid'],
         name: json['name'],
@@ -115,7 +117,10 @@ class Activity extends ListableItem implements Evento {
         lat: json['lat'],
         long: json['long'],
         direccion: json['direccion'],
-        price: json['price'],
+        aLaGorra: json['aLaGorra'],
+        recommendedAmount: json['recommendedAmount'] != null
+            ? (json['recommendedAmount'] as int?)?.toDouble()
+            : null,
         conReserva: json['reserva_necesaria'],
         asistentes: (json['asistentes'] as List)
             .map((asistenteJson) => Usuario.fromJson(asistenteJson))

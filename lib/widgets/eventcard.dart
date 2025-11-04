@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:worldwildprova/screens/activitydetail_screen.dart';
 import 'package:worldwildprova/screens/promodetail_screen.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/privatePlanDetail.dart';
 import 'package:worldwildprova/widgets/usages.dart';
 
@@ -132,8 +133,11 @@ class EventCard extends StatelessWidget {
                               BorderRadius.circular(10), // bordes redondeados
                         ),
                         child: Text(
-                          formatDate(activityDateTime),
-                          style: TextStyle(fontSize: 18),
+                          formatDate(activityDateTime).toUpperCase(),
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.logo),
                         ),
                       )),
                   if (active != null)
@@ -171,18 +175,25 @@ class EventCard extends StatelessWidget {
                       )),
                   if (created_by_user)
                     const Positioned(
-                        top: 6,
-                        right: 4,
-                        child: Stack(
-                          alignment: Alignment.center,
+                        top: 10,
+                        right: 6,
+                        child: Column(
                           children: [
-                            Icon(Icons.star,
-                                size: 35,
-                                color: Colors.amber), // fondo del icono
                             Text(
-                              'mío',
-                              style:
-                                  TextStyle(color: Colors.black, fontSize: 8),
+                              'MI',
+                              style: TextStyle(
+                                  color: AppTheme.logo,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1),
+                            ),
+                            Text(
+                              'PLAN',
+                              style: TextStyle(
+                                  color: AppTheme.logo,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1),
                             ),
                           ],
                         )),

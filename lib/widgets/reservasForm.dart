@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:worldwildprova/models_fromddbb/campo.dart';
 import 'package:worldwildprova/models_fromddbb/reserva.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/camposForm.dart';
 
 /// Widget hijo de reservas, recibe onGuardar para reportar la nueva reserva al form principal
@@ -51,9 +52,8 @@ class _ReservasFormState extends State<ReservasForm> {
     cantidadController.clear();
     camposAgregados.clear();
 
-    widget.onReservasChanged(reservas); // reporta al form principal
+    widget.onReservasChanged(reservas);
 
-    // limpiar
     tipoReservaController.clear();
     cantidadController.clear();
     camposAgregados.clear();
@@ -75,7 +75,7 @@ class _ReservasFormState extends State<ReservasForm> {
     setState(() {
       reservas.removeAt(index);
     });
-    widget.onReservasChanged(reservas); // reporta al form principal
+    widget.onReservasChanged(reservas);
   }
 
   @override
@@ -90,7 +90,7 @@ class _ReservasFormState extends State<ReservasForm> {
               margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.orange[400],
+                color: AppTheme.naranja_light,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Column(
@@ -123,36 +123,36 @@ class _ReservasFormState extends State<ReservasForm> {
                           children: [
                             Text(reserva.tipoReserva,
                                 style: const TextStyle(
-                                    fontWeight: FontWeight.bold, fontSize: 18)),
+                                    fontWeight: FontWeight.bold, fontSize: 30)),
                             Text('Cantidad: ${reserva.cantidad}',
-                                style: const TextStyle(fontSize: 16)),
+                                style: const TextStyle(fontSize: 20)),
                           ],
                         ),
                       ),
                       const SizedBox(width: 16), // separación entre columnas
-                      // Lado derecho: campos en columna
                       Expanded(
                         flex: 3,
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: reserva.campos
                               .map((c) => Container(
                                     margin: const EdgeInsets.symmetric(
                                         vertical: 2), // espacio entre campos
                                     padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
+                                      color: AppTheme.logo,
                                       border: Border.all(
-                                        color:
-                                            Colors.black87, // color del borde
-                                        width: 1, // grosor del borde
+                                        color: AppTheme.logo, // color del borde
+                                        width: 2, // grosor del borde
                                       ),
-                                      borderRadius: BorderRadius.circular(5),
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                     child: Text(
                                       ' ${c.label}',
                                       style: const TextStyle(
-                                          fontWeight: FontWeight.w300,
-                                          fontSize: 14),
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                          fontSize: 18),
                                     ),
                                   ))
                               .toList(),
@@ -207,26 +207,37 @@ class _ReservasFormState extends State<ReservasForm> {
                     decoration: const InputDecoration(labelText: 'Cantidad'),
                   ),
                   const SizedBox(height: 12),
-                  ...camposAgregados.map((c) => Text(c.label)).toList(),
+                  ...camposAgregados
+                      .map((c) => Text(c.label,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 18,
+                              color: AppTheme.logo)))
+                      .toList(),
+                  SizedBox(height: 12),
                   CamposForm(
                     // camposAgregados: camposAgregados,
                     onAgregar: agregarCampo,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       ElevatedButton(
                         onPressed: guardar,
                         style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange[400]),
-                        child: const Text('Aceptar'),
+                            backgroundColor: AppTheme.naranja_light),
+                        child: const Text('Aceptar',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900, fontSize: 20)),
                       ),
                       ElevatedButton(
                         onPressed: cancelar,
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.grey),
-                        child: const Text('Cancelar'),
+                        child: const Text('Cancelar',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w900, fontSize: 20)),
                       ),
                     ],
                   ),

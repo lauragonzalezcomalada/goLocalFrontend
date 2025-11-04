@@ -6,6 +6,7 @@ import 'package:worldwildprova/config.dart';
 import 'dart:convert';
 
 import 'package:worldwildprova/screens/onboarding_screen.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -76,34 +77,76 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Registrarse')),
+      appBar: AppBar(),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text("Registro manual"),
+            Text(
+              "REGISTRO MANUAL",
+              style: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.logo),
+            ),
+            SizedBox(height: 20),
             Form(
               key: _formKey,
               child: Column(
                 children: [
                   TextFormField(
                       controller: nameController,
-                      decoration: InputDecoration(labelText: 'Nombre')),
+                      decoration: const InputDecoration(
+                        labelText: 'NOMBRE',
+                        labelStyle: TextStyle(
+                          color: AppTheme.logo,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      )),
                   TextFormField(
                       controller: emailController,
-                      decoration: InputDecoration(labelText: 'Email')),
+                      decoration: const InputDecoration(
+                        labelText: 'EMAIL',
+                        labelStyle: TextStyle(
+                          color: AppTheme.logo,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      )),
                   TextFormField(
                       controller: passwordController,
-                      decoration: InputDecoration(labelText: 'Contraseña'),
+                      decoration: const InputDecoration(
+                        labelText: 'CONTRASEÑA',
+                        labelStyle: TextStyle(
+                          color: AppTheme.logo,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       obscureText: true),
-                  SizedBox(height: 10),
+                  SizedBox(height: 100),
                   ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
                         registerManually();
                       }
                     },
-                    child: Text('Registrarse manualmente'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.logo,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 40, vertical: 10),
+                    ),
+                    child: Text(
+                      'SIGUIENTE',
+                      style: TextStyle(
+                        height: 1,
+                        fontSize: 35,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ],
               ),

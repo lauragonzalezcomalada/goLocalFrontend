@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:worldwildprova/config.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 
 class ShareEventButton extends StatefulWidget {
   final int eventType;
@@ -43,13 +44,21 @@ class _ShareEventButtonState extends State<ShareEventButton> {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      onPressed: () {
-        final url = "golocal://activity/${widget.eventUuid}";
-        Share.share(
-          "Mirá este evento: $url",
-        );
-      },
-      child: const Icon(Icons.send),
-    );
+        onPressed: () {
+          final url = "golocal://activity/${widget.eventUuid}";
+          Share.share(
+            "Mirá este evento: $url",
+          );
+        },
+        child: const Icon(Icons.send),
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(
+              color: AppTheme.logo,
+              width: 3,
+            ),
+          ),
+        ));
   }
 }

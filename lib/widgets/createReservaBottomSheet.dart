@@ -6,6 +6,7 @@ import 'package:worldwildprova/models_fromddbb/activity.dart';
 import 'package:worldwildprova/models_fromddbb/campo.dart';
 import 'package:worldwildprova/models_fromddbb/reserva.dart';
 import 'package:worldwildprova/models_fromddbb/userprofile.dart';
+import 'package:worldwildprova/widgets/appTheme.dart';
 import 'package:worldwildprova/widgets/authservice.dart';
 
 class CreateReservaBottomSheet extends StatefulWidget {
@@ -104,9 +105,11 @@ class _CreateReservaBottomSheetState extends State<CreateReservaBottomSheet> {
                       children: [
                         const SizedBox(height: 12),
                         const Text(
-                          'Haz tu reserva!',
+                          'HACÉ TU RESERVA',
                           style: TextStyle(
-                              fontSize: 50, fontWeight: FontWeight.bold),
+                              fontSize: 50,
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.logo),
                         ),
                         const SizedBox(height: 20),
                         SizedBox(height: 20),

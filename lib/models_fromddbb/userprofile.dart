@@ -51,20 +51,17 @@ class UserProfile {
         canCreatePaymentPlan: json['can_create_payment_plan'],
         tags: json['tags'] != null
             ? (json['tags'] as List)
-                .map((tagJson) =>
-                    Tag.fromJson(tagJson)) // Mapea cada tag a la clase Tag
+                .map((tagJson) => Tag.fromJson(tagJson))
                 .toList()
             : [],
         eventos: json['eventos'] != null
             ? (json['eventos'] as List)
-                .map((eventJson) =>
-                    Evento.fromJson(eventJson)) // Mapea cada tag a la clase Tag
+                .map((eventJson) => Evento.fromJson(eventJson))
                 .toList()
             : [],
         eventosCreados: json['eventos_creados'] != null
             ? (json['eventos_creados'] as List)
-                .map((eventJson) =>
-                    Evento.fromJson(eventJson)) // Mapea cada tag a la clase Tag
+                .map((eventJson) => Evento.fromJson(eventJson))
                 .toList()
             : [],
         unreadMessages: json['unread_messages'] != null
