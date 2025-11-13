@@ -136,6 +136,7 @@ class _ActivitiesListState extends State<ActivitiesList> {
   }
 
   Future<void> updateViews(String uuid) async {
+    print('sactualitzen les views');
     try {
       final response = await http.get(Uri.parse(
           '${Config.serverIp}/register_view/?activity=True&uuid=$uuid'));

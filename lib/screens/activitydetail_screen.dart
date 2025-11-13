@@ -339,7 +339,6 @@ class _ActivityDetailState extends State<ActivityDetail> {
     String formattedStartDate =
         DateFormat('EEEE, d \'de\' MMMM \'a las\' HH:mm ', 'es_ES')
             .format(activity!.dateTime);
-    print('activity deetail: ${activity!.created_by_user}');
     return Scaffold(
       appBar: AppBar(),
       body: Stack(children: [
@@ -993,8 +992,10 @@ class _ActivityDetailState extends State<ActivityDetail> {
           ),
       ]),
       bottomSheet: GestureDetector(
-        //
         onTap: () async {
+          print('tapped');
+          print('activity con reserva: ${activity!.conReserva}');
+          print('activity total: ${_totalEntradas}');
           if (activity!.conReserva == false) {
             if (_asistenciaController == true) {
               _registrarAsistencia(-1);
@@ -1012,7 +1013,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                 builder: (context) {
                   return CreateReservaBottomSheet(
                     reservas_forms: activity!.reservas_forms!,
-                    onConfirm: (data) => _reservar(data), // función de compra
+                    onConfirm: (data) => _reservar(data),
                   );
                 },
               );
@@ -1021,9 +1022,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
             //ACTIVIDAD DE PAGO
             if (activity!.tickets_link != null) {
               final uri = Uri.parse(activity!.tickets_link!);
-              await launchUrl(uri,
-                  mode: LaunchMode
-                      .externalApplication); // revisar si funciona en dispositiu físic
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
             }
             if (_totalEntradas > 0) {
               showModalBottomSheet(
@@ -1035,8 +1034,7 @@ class _ActivityDetailState extends State<ActivityDetail> {
                     activity: activity!,
                     cantidades: cantidades,
                     totalEntradas: _totalEntradas,
-                    onConfirm: (name, email) =>
-                        _createTickets(name, email), // función de compra
+                    onConfirm: (name, email) => _createTickets(name, email),
                   );
                 },
               );

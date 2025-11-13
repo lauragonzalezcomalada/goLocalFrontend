@@ -21,7 +21,6 @@ class _ShareEventButtonState extends State<ShareEventButton> {
   @override
   void initState() {
     super.initState();
-    updateSharings();
   }
 
   Future<void> updateSharings() async {
@@ -29,11 +28,8 @@ class _ShareEventButtonState extends State<ShareEventButton> {
       final response = await http.get(Uri.parse(
           '${Config.serverIp}/register_share/?activity=${widget.eventType == 1 ? 'True' : 'False'}&promo=${widget.eventType == 2 ? 'True' : 'False'}&uuid=${widget.eventUuid}'));
 
-      if (response.statusCode == 200) {
-        List<dynamic> data = json.decode(response.body);
-      } else {
-        // Si la respuesta es un error, muestra un mensaje
-        throw Exception('Failed to load places');
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update shares');
       }
     } catch (e) {
       // Si ocurre un error en la solicitud
@@ -44,13 +40,13 @@ class _ShareEventButtonState extends State<ShareEventButton> {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-        onPressed: () {
+        onPressed: () async {
           final url = "golocal://activity/${widget.eventUuid}";
           Share.share(
             "Mirá este evento: $url",
           );
+          await updateSharings();
         },
-        child: const Icon(Icons.send),
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -59,6 +55,7 @@ class _ShareEventButtonState extends State<ShareEventButton> {
               width: 3,
             ),
           ),
-        ));
+        ),
+        child: const Icon(Icons.send));
   }
 }
